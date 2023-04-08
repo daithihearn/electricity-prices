@@ -25,6 +25,6 @@ class PriceController(
     )
     @ResponseBody
     fun getPrices(@RequestParam(required = false) start: String?, @RequestParam(required = false) end: String?): List<Price> {
-        return priceSerice.getPrices(start, end)
+        return priceSerice.getPrices(end, start)
     }
 }
