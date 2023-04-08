@@ -1,0 +1,47 @@
+name: Publish to Dockerhub
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: Build and Publish docker image to dockerhub
+    permissions:
+      contents: write
+      pull-requests: write
+      packages: read
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update Version
+        run: echo "${{ github.ref_name }}" > .version
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Publish to Registry
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: daithihearn/electricity-prices
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          platforms: linux/amd64,linux/arm64/v8
+          tags: "latest,${{ github.ref_name }}"
+      - name: Create PR with version changes
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.PAT_PR }}
+          commit-message: Update latest version (${{ github.ref_name }})
+          title: Update latest version (${{ github.ref_name }})
+          body: |
+            Update latest version (${{ github.ref_name }})
+          branch: update-version-${{ github.ref_name }}
+          base: main
+          add-paths: |
+            .version
+          labels: |
+            update
+          assignees: |
+            ${{ github.actor }}
