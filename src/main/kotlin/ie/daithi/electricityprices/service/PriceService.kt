@@ -23,11 +23,11 @@ class PriceService(
 
     fun getPrices(start: String?, end: String?): List<Price> {
         val today = LocalDate.now()
-        val startDate = start?.let { LocalDateTime.parse(it, dateTimeFormatter) } ?: today.atStartOfDay().minusSeconds(1)
+        val startDate = start?.let { LocalDateTime.parse(it, dateTimeFormatter) } ?: today.atStartOfDay()
         val endDate = end?.let { LocalDateTime.parse(it, dateTimeFormatter) } ?: today.plusDays(1).atStartOfDay()
 
         logger.info("Getting prices between $startDate and $endDate")
-        return priceRepo.dateTimeBetween(startDate, endDate)
+        return priceRepo.dateTimeBetween(startDate.minusSeconds(1), endDate.plusSeconds(1))
     }
 
     // Calls to the API and update the latest prices
