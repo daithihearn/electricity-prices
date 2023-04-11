@@ -36,7 +36,7 @@ repositories {
 version=File(".version").readText(Charsets.UTF_8)
 
 group = "ie.daithi.electricityprices"
-java.sourceCompatibility = JavaVersion.VERSION_19
+java.sourceCompatibility = JavaVersion.VERSION_17
 
 description = "api"
 
@@ -64,12 +64,12 @@ dependencies {
 	implementation("io.springfox:springfox-swagger-ui:$swaggerVersion")
 
 	// Other
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
 	implementation("org.apache.commons:commons-text:1.10.0")
 
 	//Test
 	testImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion")
-	testImplementation("io.mockk:mockk:1.13.2")
+	testImplementation("io.mockk:mockk:1.13.4")
 
 
 }

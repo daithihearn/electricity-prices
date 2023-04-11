@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 @Component
 @EnableScheduling
 class PriceManager(private val priceService: PriceService) {
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 */5 20-23 * * *")
     fun updatePriceData() {
         priceService.updatePriceData()
     }
