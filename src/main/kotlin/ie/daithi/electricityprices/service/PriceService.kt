@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+val dateTimeOffsetFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
 
 @Service
 class PriceService(
@@ -23,11 +23,11 @@ class PriceService(
 
     fun getPrices(start: String?, end: String?): List<Price> {
         val today = LocalDate.now()
-        val startDate = start?.let { LocalDateTime.parse(it, dateTimeFormatter) } ?: today.atStartOfDay()
-        val endDate = end?.let { LocalDateTime.parse(it, dateTimeFormatter) } ?: today.plusDays(1).atStartOfDay()
+        val startDate = (start?.let { LocalDate.parse(it, dateFormatter) } ?: today).atStartOfDay().minusSeconds(1)
+        val endDate = (end?.let { LocalDate.parse(it, dateFormatter) } ?: today).plusDays(1).atStartOfDay().minusSeconds(1)
 
         logger.info("Getting prices between $startDate and $endDate")
-        return priceRepo.dateTimeBetween(startDate.minusSeconds(1), endDate.plusSeconds(1))
+        return priceRepo.dateTimeBetween(startDate, endDate)
     }
 
     // Calls to the API and update the latest prices
@@ -39,7 +39,7 @@ class PriceService(
 
         val pvpc = reePrices?.included?.find { it.id == "1001" }
         val prices = pvpc?.attributes?.values?.map { Price(
-                dateTime = LocalDateTime.parse(it.datetime, dateTimeFormatter),
+                dateTime = LocalDateTime.parse(it.datetime, dateTimeOffsetFormatter),
                 price = it.value / 1000
             ) }
 

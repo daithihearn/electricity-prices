@@ -20,7 +20,7 @@ class PriceController(
     @ResponseStatus(value = HttpStatus.OK)
     @ApiOperation(value = "Get price info", notes = "Returns price info within the range provided. " +
             "If no start date is provided the default is the start of the current day. If no end date is " +
-            "provided the default is the end of today. Dates should be given in a string form yyyy-MM-dd'T'HH:mm:ss")
+            "provided the default is the end of today. Dates should be given in a string form yyyy-MM-dd")
     @ApiResponses(
             ApiResponse(code = 200, message = "Request successful")
     )
