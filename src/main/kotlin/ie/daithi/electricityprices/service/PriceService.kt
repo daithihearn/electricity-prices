@@ -33,9 +33,9 @@ class PriceService(
     // Calls to the API and update the latest prices
     fun updatePriceData() {
         logger.info("Updating price data")
-        val today = LocalDate.now().format(dateFormatter)
+        val tomorrow = LocalDate.now().plusDays(1).format(dateFormatter)
         val yesterday = LocalDate.now().minusDays(1).format(dateFormatter)
-        val reePrices = reeRest.get().uri("?time_trunc=hour&start_date=${yesterday}T00:00&end_date=${today}T23:59").retrieve().bodyToMono(ReePrice::class.java).block()
+        val reePrices = reeRest.get().uri("?time_trunc=hour&start_date=${yesterday}T00:00&end_date=${tomorrow}T23:59").retrieve().bodyToMono(ReePrice::class.java).block()
 
         val pvpc = reePrices?.included?.find { it.id == "1001" }
         val prices = pvpc?.attributes?.values?.map { Price(
