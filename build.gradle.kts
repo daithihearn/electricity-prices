@@ -2,23 +2,21 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 buildscript {
-	val kotlinVersion = "1.6.10"
-	val springBootVersion = "2.7.7"
 	repositories {
 		mavenLocal()
 		mavenCentral()
 	}
 	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
-		classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+		classpath("org.springframework.boot:spring-boot-gradle-plugin")
+		classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
 	}
 }
 
 plugins {
-	id("org.springframework.boot") version "2.7.7"
+	id("org.springframework.boot") version "3.0.5"
 	id("maven-publish")
-	id("org.jetbrains.kotlin.jvm") version "1.6.10"
-	kotlin("plugin.spring") version "1.6.10"
+	kotlin("jvm") version "1.7.22"
+	kotlin("plugin.spring") version "1.7.22"
 }
 
 apply(plugin = "maven-publish")
@@ -40,9 +38,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 description = "api"
 
-val springBootVersion: String = "2.7.7"
-val swaggerVersion: String = "2.9.2"
-
 dependencies {
 
 	// Internal Dependencies
@@ -54,21 +49,20 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.10")
 
 	// Spring dependencies
-	implementation("org.springframework.boot:spring-boot-starter:$springBootVersion")
-	implementation("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
-	implementation("org.springframework.boot:spring-boot-starter-webflux:$springBootVersion")
-	implementation("org.springframework.boot:spring-boot-starter-data-mongodb:$springBootVersion")
+	implementation("org.springframework.boot:spring-boot-starter")
+	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
+	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 
-	// Springfox
-	implementation("io.springfox:springfox-swagger2:$swaggerVersion")
-	implementation("io.springfox:springfox-swagger-ui:$swaggerVersion")
+	// Swagger
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.4")
 
 	// Other
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
 	implementation("org.apache.commons:commons-text:1.10.0")
 
 	//Test
-	testImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("io.mockk:mockk:1.13.4")
 
 
