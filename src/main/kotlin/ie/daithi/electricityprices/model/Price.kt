@@ -8,11 +8,10 @@ import org.springframework.util.DigestUtils
 import java.time.LocalDateTime
 
 @Document(collection = "prices")
-@CompoundIndex(name = "date-hour", def = "{'date': 1, 'hour': 1}", unique = true)
 data class Price(
     @Id
     val id: String,
-    @Indexed
+    @Indexed(unique = true)
     val dateTime: LocalDateTime,
     val price: Double,
 ) {
