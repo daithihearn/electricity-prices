@@ -96,7 +96,7 @@ class PriceService(
             // Get the prices from ESIOS
             val query = "?date=${day.format(dateFormatter)}"
             val esiosPrices = esiosRest.get().uri(query).retrieve().bodyToMono(EsiosPrice::class.java).block()
-            if ((esiosPrices == null || esiosPrices.pvpc.isNullOrEmpty()) && day.isEqual(LocalDate.now().plusDays(1)))
+            if ((esiosPrices == null || esiosPrices.pvpc.isNullOrEmpty()) && day.isAfter(LocalDate.now()))
                 throw DataNotAvailableYetException("Tomorrow's data is not available yet")
 
             logger.info("Received ${esiosPrices?.pvpc?.size} prices from ESIOS")
