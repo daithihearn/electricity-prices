@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import java.util.*
 
 @Configuration
-open class AppConfig(@Value("\${esios.url}") private val esiosUrl: String) {
+open class AppConfig(@Value("\${ree.url}") private val reeUrl: String, @Value("\${esios.url}") private val esiosUrl: String) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     @Bean
     open fun esiosRest(): WebClient {
@@ -27,4 +27,19 @@ open class AppConfig(@Value("\${esios.url}") private val esiosUrl: String) {
             .baseUrl(esiosUrl)
             .build()
     }
+
+    @Bean
+    open fun reeRest(): WebClient {
+        val size = 16 * 1024 * 1024
+        val strategies = ExchangeStrategies.builder()
+            .codecs { codecs: ClientCodecConfigurer ->
+                codecs.defaultCodecs().maxInMemorySize(size)
+            }
+            .build()
+        return WebClient.builder()
+            .exchangeStrategies(strategies)
+            .baseUrl(reeUrl)
+            .build()
+    }
+
 }

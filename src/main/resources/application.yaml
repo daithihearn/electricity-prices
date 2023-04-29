@@ -12,19 +12,14 @@ spring:
 # MongoDB
 
 # API
+ree.url: https://apidatos.ree.es/en/datos/mercados/precios-mercados-tiempo-real
 esios.url: https://api.esios.ree.es/archives/70/download_json
 
 # Logging
 logging:
   level:
-    org.springframework.web: WARN
-    ie.daithi: ${LOGGING_LEVEL:INFO}
-    # org.springframework.data.mongodb: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: ./logs/application.log
+    ROOT: INFO
+    ie.daithi: ${APP_LOG_LEVEL:INFO}
 
 springdoc:
   api-docs:

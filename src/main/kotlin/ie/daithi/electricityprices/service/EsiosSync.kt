@@ -1,20 +1,19 @@
 package ie.daithi.electricityprices.service
 
 import ie.daithi.electricityprices.exceptions.DataNotAvailableYetException
-import ie.daithi.electricityprices.utils.esiosQueryFormatter
+import ie.daithi.electricityprices.utils.dateFormatter
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDate
-import java.time.ZoneOffset
 
 @Component
-open class PVPCSync(private val priceService: PriceService) {
+open class EsiosSync(private val priceService: PriceService) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    private var lastSyncedDate: LocalDate = LocalDate.parse("2014-03-31", esiosQueryFormatter)
+    private var lastSyncedDate: LocalDate = LocalDate.parse("2014-03-31", dateFormatter)
 
     fun start() {
-        logger.info("Starting PVPC sync from: $lastSyncedDate")
+        logger.info("Starting ESIOS PVPC sync from: $lastSyncedDate")
         run()
     }
 

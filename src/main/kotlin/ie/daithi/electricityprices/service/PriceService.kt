@@ -3,6 +3,7 @@ package ie.daithi.electricityprices.service
 import ie.daithi.electricityprices.exceptions.DataNotAvailableYetException
 import ie.daithi.electricityprices.model.EsiosPrice
 import ie.daithi.electricityprices.model.Price
+import ie.daithi.electricityprices.model.ReePrice
 import ie.daithi.electricityprices.repos.PriceRepo
 import ie.daithi.electricityprices.utils.*
 import org.apache.logging.log4j.LogManager
@@ -14,6 +15,7 @@ import java.time.LocalDateTime
 @Service
 class PriceService(
         private val priceRepo: PriceRepo,
+        private val reeRest: WebClient,
         private val esiosRest: WebClient
 ) {
 
@@ -35,6 +37,51 @@ class PriceService(
         return priceRepo.dateTimeBetween(startDate, endDate)
     }
 
+    /*
+        Calls to the API and update the latest prices
+        We use the REE API as they have the most up to date data
+     */
+    fun updatePriceData(date: LocalDate) {
+        logger.info("Updating price data from REE for $date")
+
+        val previousDay = date.minusDays(1)
+
+        // Get the prices for tomorrow
+        val currPrices = getPrices(date)
+
+        // Validate that we have prices for the day
+        if (!validatePricesForDay(currPrices, date)) {
+            val reePrices = reeRest.get()
+                .uri(
+                    "?time_trunc=hour&start_date=${previousDay.format(dateFormatter)}T00:00&end_date=${
+                        date.format(
+                            dateFormatter
+                        )
+                    }T23:59"
+                )
+                .retrieve().bodyToMono(ReePrice::class.java).block()
+            if (reePrices == null || reePrices.included.isNullOrEmpty())
+                throw DataNotAvailableYetException("Tomorrow's data is not available yet")
+
+            val pvpc = reePrices?.included?.find { it.id == "1001" }
+            val prices = pvpc?.attributes?.values?.map {
+                Price(
+                    dateTime = LocalDateTime.parse(it.datetime, dateTimeOffsetFormatter),
+                    price = it.value / 1000
+                )
+            }
+
+            logger.info("Saving ${prices?.size} prices")
+            priceRepo.saveAll(prices ?: emptyList())
+        } else {
+            logger.info("Price data for tomorrow is already up-to-date")
+        }
+    }
+
+    /*
+        Syncs the prices for the given day with ESIOS API
+        We use ESIOS API as they have all historical data
+     */
     fun syncEsiosData(day: LocalDate) {
         // Get the prices for the day
         val prices = getPrices(day)
@@ -47,7 +94,7 @@ class PriceService(
             priceRepo.deleteAll(prices)
 
             // Get the prices from ESIOS
-            val query = "?date=${day.format(esiosQueryFormatter)}"
+            val query = "?date=${day.format(dateFormatter)}"
             val esiosPrices = esiosRest.get().uri(query).retrieve().bodyToMono(EsiosPrice::class.java).block()
             if ((esiosPrices == null || esiosPrices.pvpc.isNullOrEmpty()) && day.isEqual(LocalDate.now().plusDays(1)))
                 throw DataNotAvailableYetException("Tomorrow's data is not available yet")
@@ -55,7 +102,7 @@ class PriceService(
             logger.info("Received ${esiosPrices?.pvpc?.size} prices from ESIOS")
             val prices = esiosPrices?.pvpc?.map {
                 Price(
-                dateTime = LocalDateTime.parse("${it.day}${it.hour.substring(0,2)}:00:00", dateTimeOffsetFormatter),
+                dateTime = LocalDateTime.parse("${it.day}${it.hour.substring(0,2)}:00:00", esiosFormatter),
                 price = esNumberFormat.parse(it.pcb ?: it.gen).toDouble().div(1000)
             ) }
 
