@@ -2,6 +2,7 @@ package ie.daithi.electricityprices.web.controller
 
 import ie.daithi.electricityprices.model.AlexaSkillResponse
 import ie.daithi.electricityprices.service.PriceService
+import ie.daithi.electricityprices.utils.alexaSkillFormatter
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 @RestController
@@ -33,7 +35,7 @@ class AlexaSkillController(private val priceSerice: PriceService) {
         val currentPriceCents = currentPrice?.price?.times(100)?.roundToInt()
 
         return AlexaSkillResponse(
-            updateDate = now.toString(),
+            updateDate = now.format(alexaSkillFormatter),
             titleText = "Electricity Prices",
             mainText = "The current price is $currentPriceCents cents per kWh"
         )
