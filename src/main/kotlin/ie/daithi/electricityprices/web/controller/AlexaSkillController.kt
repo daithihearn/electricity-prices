@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
+import kotlin.math.roundToInt
 
 @RestController
 @RequestMapping("/api/v1")
@@ -28,10 +29,13 @@ class AlexaSkillController(private val priceSerice: PriceService) {
         // Get current price
         val currentPrice = prices.find { it.dateTime.hour == now.hour }
 
+        // Round current price to nearest cent
+        val currentPriceCents = currentPrice?.price?.times(100)?.roundToInt()
+
         return AlexaSkillResponse(
             updateDate = now.toString(),
             titleText = "Electricity Prices",
-            mainText = "The current price is ${currentPrice?.price} cents per kWh"
+            mainText = "The current price is $currentPriceCents cents per kWh"
         )
     }
 }
