@@ -36,8 +36,8 @@ class AlexaSkillController(private val priceSerice: PriceService) {
 
         return AlexaSkillResponse(
             updateDate = now.format(alexaSkillFormatter),
-            titleText = "Electricity Prices",
-            mainText = "The current price is $currentPriceCents cents per kWh"
+            titleText = "Los precios de la luz",
+            mainText = "El precio actual de la luz es $currentPriceCents centavos por kilovatio hora."
         )
     }
 }
