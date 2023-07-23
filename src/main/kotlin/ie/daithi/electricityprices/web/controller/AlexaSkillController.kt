@@ -3,12 +3,9 @@ package ie.daithi.electricityprices.web.controller
 import ie.daithi.electricityprices.model.AlexaSkillResponse
 import ie.daithi.electricityprices.service.AlexSkillService
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import io.swagger.v3.oas.annotations.enums.ParameterIn
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import java.util.Locale
