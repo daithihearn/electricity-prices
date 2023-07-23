@@ -60,7 +60,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         }
 
         // Get average price for period
-        val averagePrice = cheapestPeriod.map { it.price }.average()
+        val averagePrice = cheapestPeriod.map { it.price }.average().times(100).roundToInt()
 
         // If period hasn't started send message
         if (cheapestPeriod[0].dateTime.isAfter(now)) {
