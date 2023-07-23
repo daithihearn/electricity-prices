@@ -64,15 +64,15 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         val averagePrice = cheapestPeriod.map { it.price }.average().times(100).roundToInt()
 
         // If period hasn't started send message
-        if (cheapestPeriod[0].dateTime.isAfter(now)) {
-            return AlexaSkillResponse(
+        return if (cheapestPeriod[0].dateTime.isAfter(now)) {
+            AlexaSkillResponse(
                 updateDate = now.format(alexaSkillFormatter),
                 titleText = messageSource.getMessage("alexa.next.cheap.period.title", emptyArray(), locale),
                 mainText = messageSource.getMessage("alexa.next.cheap.period.main", arrayOf(cheapestPeriod[0].dateTime.hour, averagePrice), locale)
             )
         } else {
             // We are currently in the good period
-            return AlexaSkillResponse(
+            AlexaSkillResponse(
                 updateDate = now.format(alexaSkillFormatter),
                 titleText = messageSource.getMessage("alexa.current.cheap.period.title", emptyArray(), locale),
                 mainText = messageSource.getMessage("alexa.current.cheap.period.main", arrayOf(cheapestPeriod[0].dateTime.hour, averagePrice), locale)
@@ -118,11 +118,6 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
 
     fun getTomorrowRating(prices: List<Price>, dateTime: LocalDateTime, thirtyDayAverage: Double, locale: Locale): AlexaSkillResponse {
         val dailyAverage = prices.map { it.price }.average()
-
-        // Get the 30-day average and compare daily average to it. If it's within 2 cents then it's a normal day
-        // If it's more than 2 cents then it's a good day
-        // If it's less than 2 cents then it's a bad day
-        val thirtyDayAverage = priceSerice.getPrices(start = dateTime.toLocalDate().minusDays(30).format(dateFormatter), end = null).map { it.price }.average()
 
         val roundedDailyAverage = dailyAverage.times(100).roundToInt()
 
