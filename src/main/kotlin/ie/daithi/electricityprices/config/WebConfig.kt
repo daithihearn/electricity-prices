@@ -22,7 +22,6 @@ class WebConfig : WebMvcConfigurer {
     @Bean
     fun messageSource(): MessageSource {
         val messageSource = ReloadableResourceBundleMessageSource()
-
         messageSource.setBasename("classpath:i18n/messages")
         messageSource.setDefaultEncoding("UTF-8")
         return messageSource
