@@ -69,7 +69,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
 
         return AlexaSkillResponse(
             updateDate = dateTime.format(alexaSkillFormatter),
-            titleText = messageSource.getMessage("alexa.today.rating.title", arrayOf(dailyAverage), locale),
+            titleText = messageSource.getMessage("alexa.today.rating.title", arrayOf(dailyAverage.times(100)?.roundToInt()), locale),
             mainText = mainText
         )
     }
