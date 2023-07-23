@@ -29,8 +29,17 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         // Current Price
         responses.add(getCurrentPrice(pricesToday, now, locale))
 
-        // Day Rating
+        // Today Rating
         responses.add(getDayRating(pricesToday, now, locale))
+
+        // Get Tomorrow's price data
+        val tomorrow = now.plusDays(1)
+        val pricesTomorrow = priceSerice.getPrices(tomorrow.toLocalDate())
+
+        if (!pricesTomorrow.isEmpty()) {
+            // Tomorrow Rating
+            responses.add(getDayRating(pricesTomorrow, tomorrow, locale))
+        }
 
         return responses
     }
@@ -62,15 +71,19 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         val thirtyDayAverage = priceSerice.getPrices(start = dateTime.toLocalDate().minusDays(30).format(dateFormatter), end = null).map { it.price }.average()
 
         val roundedDailyAverage = arrayOf(dailyAverage.times(100)?.roundToInt())
+
+        // Check if is today or tomorrow
+        val day = if (dateTime.toLocalDate() == LocalDateTime.now().toLocalDate()) "today" else "tomorrow"
+
         val mainText = when {
-            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.today.rating.main.good", arrayOf(roundedDailyAverage), locale)
-            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.today.rating.main.bad", arrayOf(roundedDailyAverage), locale)
-            else -> messageSource.getMessage("alexa.today.rating.main.normal", arrayOf(roundedDailyAverage), locale)
+            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.$day.rating.main.good", arrayOf(roundedDailyAverage), locale)
+            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.$day.rating.main.bad", arrayOf(roundedDailyAverage), locale)
+            else -> messageSource.getMessage("alexa.$day.rating.main.normal", arrayOf(roundedDailyAverage), locale)
         }
 
         return AlexaSkillResponse(
             updateDate = dateTime.format(alexaSkillFormatter),
-            titleText = messageSource.getMessage("alexa.today.rating.title", emptyArray(), locale),
+            titleText = messageSource.getMessage("alexa.$day.rating.title", emptyArray(), locale),
             mainText = mainText
         )
     }
