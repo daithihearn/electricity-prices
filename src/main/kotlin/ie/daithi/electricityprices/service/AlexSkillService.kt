@@ -61,15 +61,16 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         // If it's less than 2 cents then it's a bad day
         val thirtyDayAverage = priceSerice.getPrices(start = dateTime.toLocalDate().minusDays(30).format(dateFormatter), end = null).map { it.price }.average()
 
+        val roundedDailyAverage = arrayOf(dailyAverage.times(100)?.roundToInt())
         val mainText = when {
-            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.today.rating.main.good", arrayOf(dailyAverage), locale)
-            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.today.rating.main.bad", arrayOf(dailyAverage), locale)
-            else -> messageSource.getMessage("alexa.today.rating.main.normal", arrayOf(dailyAverage), locale)
+            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.today.rating.main.good", arrayOf(roundedDailyAverage), locale)
+            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.today.rating.main.bad", arrayOf(roundedDailyAverage), locale)
+            else -> messageSource.getMessage("alexa.today.rating.main.normal", arrayOf(roundedDailyAverage), locale)
         }
 
         return AlexaSkillResponse(
             updateDate = dateTime.format(alexaSkillFormatter),
-            titleText = messageSource.getMessage("alexa.today.rating.title", arrayOf(dailyAverage.times(100)?.roundToInt()), locale),
+            titleText = messageSource.getMessage("alexa.today.rating.title", emptyArray(), locale),
             mainText = mainText
         )
     }
