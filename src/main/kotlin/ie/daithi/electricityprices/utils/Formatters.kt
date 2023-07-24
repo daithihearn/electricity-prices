@@ -11,3 +11,4 @@ val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd",
 val esiosFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyyHH:mm:ss", esLocale)
 val dateTimeOffsetFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", esLocale)
 val alexaSkillFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.S'Z'", esLocale)
+val amPmFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("ha", esLocale)
