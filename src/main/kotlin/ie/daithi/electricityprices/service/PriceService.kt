@@ -14,9 +14,9 @@ import java.time.LocalDateTime
 
 @Service
 class PriceService(
-        private val priceRepo: PriceRepo,
-        private val reeRest: WebClient,
-        private val esiosRest: WebClient
+    private val priceRepo: PriceRepo,
+    private val reeRest: WebClient,
+    private val esiosRest: WebClient
 ) {
 
     private val logger = LogManager.getLogger(this::class.simpleName)
@@ -31,7 +31,8 @@ class PriceService(
     fun getPrices(start: String?, end: String?): List<Price> {
         val today = LocalDate.now()
         val startDate = (start?.let { LocalDate.parse(it, dateFormatter) } ?: today).atStartOfDay().minusSeconds(1)
-        val endDate = (end?.let { LocalDate.parse(it, dateFormatter) } ?: today).plusDays(1).atStartOfDay().minusSeconds(1)
+        val endDate =
+            (end?.let { LocalDate.parse(it, dateFormatter) } ?: today).plusDays(1).atStartOfDay().minusSeconds(1)
 
         logger.info("Getting prices between $startDate and $endDate")
         return priceRepo.dateTimeBetween(startDate, endDate)
@@ -78,6 +79,12 @@ class PriceService(
         }
     }
 
+    fun getThirtyDayAverage(): Double {
+        val now = LocalDateTime.now()
+        return getPrices(start = now.toLocalDate().minusDays(30).format(dateFormatter), end = null)
+            .map { it.price }.average()
+    }
+
     /*
         Syncs the prices for the given day with ESIOS API
         We use ESIOS API as they have all historical data
@@ -102,9 +109,10 @@ class PriceService(
             logger.info("Received ${esiosPrices?.pvpc?.size} prices from ESIOS")
             val prices = esiosPrices?.pvpc?.map {
                 Price(
-                dateTime = LocalDateTime.parse("${it.day}${it.hour.substring(0,2)}:00:00", esiosFormatter),
-                price = esNumberFormat.parse(it.pcb ?: it.gen).toDouble().div(1000)
-            ) }
+                    dateTime = LocalDateTime.parse("${it.day}${it.hour.substring(0, 2)}:00:00", esiosFormatter),
+                    price = esNumberFormat.parse(it.pcb ?: it.gen).toDouble().div(1000)
+                )
+            }
 
             if (!prices.isNullOrEmpty()) priceRepo.saveAll(prices)
         } else {

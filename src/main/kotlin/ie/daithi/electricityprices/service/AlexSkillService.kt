@@ -15,7 +15,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
 
     private val logger = LogManager.getLogger(this::class.simpleName)
 
-    fun getResponses(locale: Locale): List<AlexaSkillResponse> {
+    fun getFullFeed(locale: Locale): List<AlexaSkillResponse> {
         val responses = mutableListOf<AlexaSkillResponse>()
 
         // Get Today's price data
@@ -27,107 +27,60 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         }
 
         // Today's price and rating
-        val thirtyDayAverage = priceSerice.getPrices(start = now.toLocalDate().minusDays(30).format(dateFormatter), end = null).map { it.price }.average()
-        responses.add(getTodayRating(pricesToday, now, thirtyDayAverage, locale))
+        val thirtyDayAverage = priceSerice.getThirtyDayAverage()
+        responses.add(getTodayRating(now, pricesToday, thirtyDayAverage, locale))
 
         // Get next good 3-hour period
-        val nextCheapPeriod = getNextCheapPeriod(pricesToday, now, locale)
-        nextCheapPeriod?.let { responses.add(it) }
+        val nextCheapPeriod = getNextCheapPeriod(now, pricesToday, locale)
+        if (nextCheapPeriod.second) responses.add(nextCheapPeriod.first)
 
         // Get next bad 3-hour period
-        val nextExpensivePeriod = getNextExpensivePeriod(pricesToday, now, locale)
-        nextExpensivePeriod?.let { responses.add(it) }
+        val nextExpensivePeriod = getNextExpensivePeriod(now, pricesToday, locale)
+        if (nextExpensivePeriod.second) responses.add(nextExpensivePeriod.first)
 
         // Get Tomorrow's price data
         val tomorrow = now.plusDays(1)
-        val pricesTomorrow = priceSerice.getPrices(tomorrow.toLocalDate())
-
-        if (pricesTomorrow.isNotEmpty()) {
-            // Tomorrow Rating
-            responses.add(getTomorrowRating(pricesTomorrow, tomorrow, thirtyDayAverage, locale))
-        }
+        val tomorrowRating =
+            getTomorrowRating(dateTime = tomorrow, thirtyDayAverage = thirtyDayAverage, locale = locale)
+        if (tomorrowRating.second) responses.add(tomorrowRating.first)
 
         return responses
     }
 
-    private fun getNextCheapPeriod(pricesToday: List<Price>, now: LocalDateTime, locale: Locale): AlexaSkillResponse? {
-        val twoCheapestPeriods = getTwoCheapestPeriods(pricesToday, 3)
-
-        val nextPeriod = if (twoCheapestPeriods.first.isNotEmpty() && !twoCheapestPeriods.first[2].dateTime.plusMinutes(59).isBefore(now)) {
-            twoCheapestPeriods.first
-        } else if (twoCheapestPeriods.second.isNotEmpty() && !twoCheapestPeriods.second[2].dateTime.plusMinutes(59).isBefore(now)) {
-            twoCheapestPeriods.second
-        } else {
-            return null
-        }
-
-        // Get average price for period
-        val averagePrice = nextPeriod.map { it.price }.average().times(100).roundToInt()
-
-        val cheapestPeriodTime = amPmFormatter.format(nextPeriod[0].dateTime)
-
-        // If period hasn't started send message
-        return if (nextPeriod[0].dateTime.isAfter(now)) {
-            AlexaSkillResponse(
-                updateDate = now.format(alexaSkillFormatter),
-                titleText = messageSource.getMessage("alexa.next.cheap.period.title", emptyArray(), locale),
-                mainText = messageSource.getMessage("alexa.next.cheap.period.main", arrayOf(cheapestPeriodTime, averagePrice), locale)
-            )
-        } else {
-            // We are currently in the good period
-            AlexaSkillResponse(
-                updateDate = now.format(alexaSkillFormatter),
-                titleText = messageSource.getMessage("alexa.current.cheap.period.title", emptyArray(), locale),
-                mainText = messageSource.getMessage("alexa.current.cheap.period.main", arrayOf(cheapestPeriodTime, averagePrice), locale)
-            )
-        }
-    }
-
-    fun getNextExpensivePeriod(pricesToday: List<Price>, now: LocalDateTime, locale: Locale): AlexaSkillResponse? {
-        val expensivePeriod = getMostExpensivePeriod(pricesToday, 3)
-
-        // If the period has passed do nothing
-        if (expensivePeriod[2].dateTime.plusMinutes(59).isBefore(now)) {
-            return null
-        }
-
-        // Get average price for period
-        val averagePrice = expensivePeriod.map { it.price }.average().times(100).roundToInt()
-
-        val expensivePeriodTime = amPmFormatter.format(expensivePeriod[0].dateTime)
-
-        // If period hasn't started send message
-        return if (expensivePeriod[0].dateTime.isAfter(now)) {
-            AlexaSkillResponse(
-                updateDate = now.format(alexaSkillFormatter),
-                titleText = messageSource.getMessage("alexa.next.expensive.period.title", emptyArray(), locale),
-                mainText = messageSource.getMessage("alexa.next.expensive.period.main", arrayOf(expensivePeriodTime, averagePrice), locale)
-            )
-        } else {
-            // We are currently in the good period
-            AlexaSkillResponse(
-                updateDate = now.format(alexaSkillFormatter),
-                titleText = messageSource.getMessage("alexa.current.expensive.period.title", emptyArray(), locale),
-                mainText = messageSource.getMessage("alexa.current.expensive.period.main", arrayOf(expensivePeriodTime, averagePrice), locale)
-            )
-        }
-    }
-
-    fun getTodayRating(prices: List<Price>, dateTime: LocalDateTime, thirtyDayAverage: Double, locale: Locale): AlexaSkillResponse {
-        val dailyAverage = prices.map { it.price }.average()
+    fun getTodayRating(
+        dateTime: LocalDateTime = LocalDateTime.now(),
+        pricesToday: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()),
+        thirtyDayAverage: Double = priceSerice.getThirtyDayAverage(),
+        locale: Locale
+    ): AlexaSkillResponse {
+        val dailyAverage = pricesToday.map { it.price }.average()
 
         val roundedDailyAverage = dailyAverage.times(100).roundToInt()
 
         // Get current price
-        val currentPrice = prices.find { it.dateTime.hour == dateTime.hour }
+        val currentPrice = pricesToday.find { it.dateTime.hour == dateTime.hour }
 
         // Round current price to nearest cent
         val currentPriceCents = currentPrice?.price?.times(100)?.roundToInt()
 
         val mainText = when {
-            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.today.rating.main.good", arrayOf(roundedDailyAverage, currentPriceCents), locale)
-            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.today.rating.main.bad", arrayOf(roundedDailyAverage, currentPriceCents), locale)
-            else -> messageSource.getMessage("alexa.today.rating.main.normal", arrayOf(roundedDailyAverage, currentPriceCents), locale)
+            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage(
+                "alexa.today.rating.main.good",
+                arrayOf(roundedDailyAverage, currentPriceCents),
+                locale
+            )
+
+            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage(
+                "alexa.today.rating.main.bad",
+                arrayOf(roundedDailyAverage, currentPriceCents),
+                locale
+            )
+
+            else -> messageSource.getMessage(
+                "alexa.today.rating.main.normal",
+                arrayOf(roundedDailyAverage, currentPriceCents),
+                locale
+            )
         }
 
         return AlexaSkillResponse(
@@ -137,31 +90,197 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         )
     }
 
-    fun getTomorrowRating(prices: List<Price>, dateTime: LocalDateTime, thirtyDayAverage: Double, locale: Locale): AlexaSkillResponse {
-        val dailyAverage = prices.map { it.price }.average()
+    fun getTomorrowRating(
+        dateTime: LocalDateTime = LocalDateTime.now().plusDays(1),
+        pricesTomorrow: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()),
+        thirtyDayAverage: Double = priceSerice.getThirtyDayAverage(),
+        locale: Locale
+    ): Pair<AlexaSkillResponse, Boolean> {
+
+        if (pricesTomorrow.isEmpty()) {
+            return Pair(
+                AlexaSkillResponse(
+                    updateDate = dateTime.format(alexaSkillFormatter),
+                    titleText = messageSource.getMessage("alexa.tomorrow.rating.title", emptyArray(), locale),
+                    mainText = messageSource.getMessage("alexa.tomorrow.rating.main.no_data", emptyArray(), locale)
+                ), false
+            )
+        }
+
+        val dailyAverage = pricesTomorrow.map { it.price }.average()
 
         val roundedDailyAverage = dailyAverage.times(100).roundToInt()
 
         // Get cheapest period
-        val cheapestPeriod = getCheapestPeriod(prices, 3)
+        val cheapestPeriod = getCheapestPeriod(pricesTomorrow, 3)
         val cheapestPeriodAverage = cheapestPeriod.map { it.price }.average().times(100).roundToInt()
         val cheapestPeriodTime = amPmFormatter.format(cheapestPeriod[0].dateTime)
 
         // Get most expensive period
-        val mostExpensivePeriod = getCheapestPeriod(prices, 3)
+        val mostExpensivePeriod = getCheapestPeriod(pricesTomorrow, 3)
         val mostExpensivePeriodAverage = mostExpensivePeriod.map { it.price }.average().times(100).roundToInt()
         val mostExpensivePeriodTime = amPmFormatter.format(mostExpensivePeriod[0].dateTime)
 
         val mainText = when {
-            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.tomorrow.rating.main.good", arrayOf(roundedDailyAverage, cheapestPeriodTime, cheapestPeriodAverage, mostExpensivePeriodTime, mostExpensivePeriodAverage), locale)
-            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.tomorrow.rating.main.bad", arrayOf(roundedDailyAverage, cheapestPeriodTime, cheapestPeriodAverage, mostExpensivePeriodTime, mostExpensivePeriodAverage), locale)
-            else -> messageSource.getMessage("alexa.tomorrow.rating.main.normal", arrayOf(roundedDailyAverage, cheapestPeriodTime, cheapestPeriodAverage, mostExpensivePeriodTime, mostExpensivePeriodAverage), locale)
+            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage(
+                "alexa.tomorrow.rating.main.good",
+                arrayOf(
+                    roundedDailyAverage,
+                    cheapestPeriodTime,
+                    cheapestPeriodAverage,
+                    mostExpensivePeriodTime,
+                    mostExpensivePeriodAverage
+                ),
+                locale
+            )
+
+            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage(
+                "alexa.tomorrow.rating.main.bad",
+                arrayOf(
+                    roundedDailyAverage,
+                    cheapestPeriodTime,
+                    cheapestPeriodAverage,
+                    mostExpensivePeriodTime,
+                    mostExpensivePeriodAverage
+                ),
+                locale
+            )
+
+            else -> messageSource.getMessage(
+                "alexa.tomorrow.rating.main.normal",
+                arrayOf(
+                    roundedDailyAverage,
+                    cheapestPeriodTime,
+                    cheapestPeriodAverage,
+                    mostExpensivePeriodTime,
+                    mostExpensivePeriodAverage
+                ),
+                locale
+            )
         }
 
-        return AlexaSkillResponse(
-            updateDate = dateTime.format(alexaSkillFormatter),
-            titleText = messageSource.getMessage("alexa.tomorrow.rating.title", emptyArray(), locale),
-            mainText = mainText
+        return Pair(
+            AlexaSkillResponse(
+                updateDate = dateTime.format(alexaSkillFormatter),
+                titleText = messageSource.getMessage("alexa.tomorrow.rating.title", emptyArray(), locale),
+                mainText = mainText
+            ), true
         )
     }
+
+    fun getNextCheapPeriod(
+        dateTime: LocalDateTime = LocalDateTime.now(),
+        pricesToday: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()),
+        locale: Locale
+    ): Pair<AlexaSkillResponse, Boolean> {
+        val twoCheapestPeriods = getTwoCheapestPeriods(pricesToday, 3)
+
+        val nextPeriod =
+            if (twoCheapestPeriods.first.isNotEmpty() && !twoCheapestPeriods.first[2].dateTime.plusMinutes(59)
+                    .isBefore(dateTime)
+            ) {
+                twoCheapestPeriods.first
+            } else if (twoCheapestPeriods.second.isNotEmpty() && !twoCheapestPeriods.second[2].dateTime.plusMinutes(59)
+                    .isBefore(dateTime)
+            ) {
+                twoCheapestPeriods.second
+            } else {
+                return Pair(
+                    AlexaSkillResponse(
+                        updateDate = dateTime.format(alexaSkillFormatter),
+                        titleText = messageSource.getMessage("alexa.next.cheap.period.title", emptyArray(), locale),
+                        mainText = messageSource.getMessage(
+                            "alexa.next.cheap.period.main.no_data",
+                            emptyArray(),
+                            locale
+                        )
+                    ), false
+                )
+            }
+
+        // Get average price for period
+        val averagePrice = nextPeriod.map { it.price }.average().times(100).roundToInt()
+
+        val cheapestPeriodTime = amPmFormatter.format(nextPeriod[0].dateTime)
+
+        // If period hasn't started send message
+        val response = if (nextPeriod[0].dateTime.isAfter(dateTime)) {
+            AlexaSkillResponse(
+                updateDate = dateTime.format(alexaSkillFormatter),
+                titleText = messageSource.getMessage("alexa.next.cheap.period.title", emptyArray(), locale),
+                mainText = messageSource.getMessage(
+                    "alexa.next.cheap.period.main",
+                    arrayOf(cheapestPeriodTime, averagePrice),
+                    locale
+                )
+            )
+        } else {
+            // We are currently in the good period
+            AlexaSkillResponse(
+                updateDate = dateTime.format(alexaSkillFormatter),
+                titleText = messageSource.getMessage("alexa.current.cheap.period.title", emptyArray(), locale),
+                mainText = messageSource.getMessage(
+                    "alexa.current.cheap.period.main",
+                    arrayOf(cheapestPeriodTime, averagePrice),
+                    locale
+                )
+            )
+        }
+        return Pair(response, true)
+    }
+
+    fun getNextExpensivePeriod(
+        dateTime: LocalDateTime = LocalDateTime.now(),
+        pricesToday: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()),
+        locale: Locale
+    ): Pair<AlexaSkillResponse, Boolean> {
+        val expensivePeriod = getMostExpensivePeriod(pricesToday, 3)
+
+        // If the period has passed do nothing
+        if (expensivePeriod[2].dateTime.plusMinutes(59).isBefore(dateTime)) {
+            return Pair(
+                AlexaSkillResponse(
+                    updateDate = dateTime.format(alexaSkillFormatter),
+                    titleText = messageSource.getMessage("alexa.next.expensive.period.title", emptyArray(), locale),
+                    mainText = messageSource.getMessage(
+                        "alexa.next.expensive.period.main.no_data",
+                        emptyArray(),
+                        locale
+                    )
+                ), false
+            )
+        }
+
+        // Get average price for period
+        val averagePrice = expensivePeriod.map { it.price }.average().times(100).roundToInt()
+
+        val expensivePeriodTime = amPmFormatter.format(expensivePeriod[0].dateTime)
+
+        // If period hasn't started send message
+        val response = if (expensivePeriod[0].dateTime.isAfter(dateTime)) {
+            AlexaSkillResponse(
+                updateDate = dateTime.format(alexaSkillFormatter),
+                titleText = messageSource.getMessage("alexa.next.expensive.period.title", emptyArray(), locale),
+                mainText = messageSource.getMessage(
+                    "alexa.next.expensive.period.main",
+                    arrayOf(expensivePeriodTime, averagePrice),
+                    locale
+                )
+            )
+        } else {
+            // We are currently in the good period
+            AlexaSkillResponse(
+                updateDate = dateTime.format(alexaSkillFormatter),
+                titleText = messageSource.getMessage("alexa.current.expensive.period.title", emptyArray(), locale),
+                mainText = messageSource.getMessage(
+                    "alexa.current.expensive.period.main",
+                    arrayOf(expensivePeriodTime, averagePrice),
+                    locale
+                )
+            )
+        }
+        return Pair(response, true)
+    }
+
+
 }
