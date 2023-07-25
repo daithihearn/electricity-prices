@@ -114,12 +114,12 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         // Get cheapest period
         val cheapestPeriod = getCheapestPeriod(pricesTomorrow, 3)
         val cheapestPeriodAverage = cheapestPeriod.map { it.price }.average().times(100).roundToInt()
-        val cheapestPeriodTime = amPmFormatter.format(cheapestPeriod[0].dateTime)
+        val cheapestPeriodTime = formatAmPm(cheapestPeriod[0].dateTime)
 
         // Get most expensive period
         val mostExpensivePeriod = getCheapestPeriod(pricesTomorrow, 3)
         val mostExpensivePeriodAverage = mostExpensivePeriod.map { it.price }.average().times(100).roundToInt()
-        val mostExpensivePeriodTime = amPmFormatter.format(mostExpensivePeriod[0].dateTime)
+        val mostExpensivePeriodTime = formatAmPm(mostExpensivePeriod[0].dateTime)
 
         val mainText = when {
             dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage(
@@ -201,7 +201,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         // Get average price for period
         val averagePrice = nextPeriod.map { it.price }.average().times(100).roundToInt()
 
-        val cheapestPeriodTime = amPmFormatter.format(nextPeriod[0].dateTime)
+        val cheapestPeriodTime = formatAmPm(nextPeriod[0].dateTime)
 
         // If period hasn't started send message
         val response = if (nextPeriod[0].dateTime.isAfter(dateTime)) {
@@ -254,7 +254,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         // Get average price for period
         val averagePrice = expensivePeriod.map { it.price }.average().times(100).roundToInt()
 
-        val expensivePeriodTime = amPmFormatter.format(expensivePeriod[0].dateTime)
+        val expensivePeriodTime = formatAmPm(expensivePeriod[0].dateTime)
 
         // If period hasn't started send message
         val response = if (expensivePeriod[0].dateTime.isAfter(dateTime)) {

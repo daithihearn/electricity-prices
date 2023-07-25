@@ -1,6 +1,7 @@
 package ie.daithi.electricityprices.utils
 
 import java.text.NumberFormat
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -12,3 +13,8 @@ val esiosFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyyH
 val dateTimeOffsetFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", esLocale)
 val alexaSkillFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.S'Z'", esLocale)
 val amPmFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h a", esLocale)
+
+fun formatAmPm(dateTime: LocalDateTime): String {
+    return amPmFormatter.format(dateTime).replace("a. m.", "AM")
+        .replace("p. m.", "PM")
+}
