@@ -15,6 +15,6 @@ val alexaSkillFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-M
 val amPmFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h a", esLocale)
 
 fun formatAmPm(dateTime: LocalDateTime): String {
-    return amPmFormatter.format(dateTime).replace("a. m.", "AM")
-        .replace("p. m.", "PM")
+    return amPmFormatter.format(dateTime).replace("a.\u00A0m.", "AM")
+        .replace("p.\u00A0m.", "PM")
 }
