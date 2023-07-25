@@ -26,10 +26,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
             return responses
         }
 
-        // Current Price
-        responses.add(getCurrentPrice(pricesToday, now, locale))
-
-        // Today Rating
+        // Today's price and rating
         val thirtyDayAverage = priceSerice.getPrices(start = now.toLocalDate().minusDays(30).format(dateFormatter), end = null).map { it.price }.average()
         responses.add(getTodayRating(pricesToday, now, thirtyDayAverage, locale))
 
@@ -116,10 +113,10 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         }
     }
 
-    /**
-     * Get the current price
-     */
-    fun getCurrentPrice(prices: List<Price>, dateTime: LocalDateTime, locale: Locale): AlexaSkillResponse {
+    fun getTodayRating(prices: List<Price>, dateTime: LocalDateTime, thirtyDayAverage: Double, locale: Locale): AlexaSkillResponse {
+        val dailyAverage = prices.map { it.price }.average()
+
+        val roundedDailyAverage = dailyAverage.times(100).roundToInt()
 
         // Get current price
         val currentPrice = prices.find { it.dateTime.hour == dateTime.hour }
@@ -127,22 +124,10 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         // Round current price to nearest cent
         val currentPriceCents = currentPrice?.price?.times(100)?.roundToInt()
 
-        return AlexaSkillResponse(
-            updateDate = dateTime.format(alexaSkillFormatter),
-            titleText = messageSource.getMessage("alexa.current.price.title", emptyArray(), locale),
-            mainText = messageSource.getMessage("alexa.current.price.main", arrayOf(currentPriceCents), locale)
-        )
-    }
-
-    fun getTodayRating(prices: List<Price>, dateTime: LocalDateTime, thirtyDayAverage: Double, locale: Locale): AlexaSkillResponse {
-        val dailyAverage = prices.map { it.price }.average()
-
-        val roundedDailyAverage = dailyAverage.times(100).roundToInt()
-
         val mainText = when {
-            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.today.rating.main.good", arrayOf(roundedDailyAverage), locale)
-            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.today.rating.main.bad", arrayOf(roundedDailyAverage), locale)
-            else -> messageSource.getMessage("alexa.today.rating.main.normal", arrayOf(roundedDailyAverage), locale)
+            dailyAverage > thirtyDayAverage + 2 -> messageSource.getMessage("alexa.today.rating.main.good", arrayOf(roundedDailyAverage, currentPriceCents), locale)
+            dailyAverage < thirtyDayAverage - 2 -> messageSource.getMessage("alexa.today.rating.main.bad", arrayOf(roundedDailyAverage, currentPriceCents), locale)
+            else -> messageSource.getMessage("alexa.today.rating.main.normal", arrayOf(roundedDailyAverage, currentPriceCents), locale)
         }
 
         return AlexaSkillResponse(
