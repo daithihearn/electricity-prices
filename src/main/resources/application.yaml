@@ -5,6 +5,9 @@ server:
   ssl.trusted-certificates: /etc/ssl/cert.pem
 
 spring:
+  profiles:
+    active:
+      ${SPRING_PROFILES_ACTIVE:prod}
   jackson.default-property-inclusion: non_null
   mvc.pathmatch.matching-strategy: ant_path_matcher
   data.mongodb.uri: ${MONGODB_URI:mongodb://localhost:27017/electricity-prices}
