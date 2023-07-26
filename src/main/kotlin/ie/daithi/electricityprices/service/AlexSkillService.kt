@@ -32,11 +32,11 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
 
         // Get next good 3-hour period
         val nextCheapPeriod = getNextCheapPeriod(now, pricesToday, locale)
-        if (nextCheapPeriod.second) responses.add(nextCheapPeriod.first)
+        responses.add(nextCheapPeriod)
 
         // Get next bad 3-hour period
         val nextExpensivePeriod = getNextExpensivePeriod(now, pricesToday, locale)
-        if (nextExpensivePeriod.second) responses.add(nextExpensivePeriod.first)
+        responses.add(nextExpensivePeriod)
 
         // Get Tomorrow's price data
         val tomorrow = now.plusDays(1)
@@ -172,7 +172,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         dateTime: LocalDateTime = LocalDateTime.now(),
         pricesToday: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()),
         locale: Locale
-    ): Pair<AlexaSkillResponse, Boolean> {
+    ): AlexaSkillResponse {
         val twoCheapestPeriods = getTwoCheapestPeriods(pricesToday, 3)
 
         val nextPeriod =
@@ -185,17 +185,16 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
             ) {
                 twoCheapestPeriods.second
             } else {
-                return Pair(
-                    AlexaSkillResponse(
-                        updateDate = dateTime.format(alexaSkillFormatter),
-                        titleText = messageSource.getMessage("alexa.next.cheap.period.title", emptyArray(), locale),
-                        mainText = messageSource.getMessage(
-                            "alexa.next.cheap.period.main.no_data",
-                            emptyArray(),
-                            locale
-                        )
-                    ), false
+                return AlexaSkillResponse(
+                    updateDate = dateTime.format(alexaSkillFormatter),
+                    titleText = messageSource.getMessage("alexa.next.cheap.period.title", emptyArray(), locale),
+                    mainText = messageSource.getMessage(
+                        "alexa.next.cheap.period.main.no_data",
+                        emptyArray(),
+                        locale
+                    )
                 )
+
             }
 
         // Get average price for period
@@ -204,7 +203,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         val cheapestPeriodTime = formatAmPm(nextPeriod[0].dateTime)
 
         // If period hasn't started send message
-        val response = if (nextPeriod[0].dateTime.isAfter(dateTime)) {
+        return if (nextPeriod[0].dateTime.isAfter(dateTime)) {
             AlexaSkillResponse(
                 updateDate = dateTime.format(alexaSkillFormatter),
                 titleText = messageSource.getMessage("alexa.next.cheap.period.title", emptyArray(), locale),
@@ -226,28 +225,25 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
                 )
             )
         }
-        return Pair(response, true)
     }
 
     fun getNextExpensivePeriod(
         dateTime: LocalDateTime = LocalDateTime.now(),
         pricesToday: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()),
         locale: Locale
-    ): Pair<AlexaSkillResponse, Boolean> {
+    ): AlexaSkillResponse {
         val expensivePeriod = getMostExpensivePeriod(pricesToday, 3)
 
         // If the period has passed do nothing
         if (expensivePeriod[2].dateTime.plusMinutes(59).isBefore(dateTime)) {
-            return Pair(
-                AlexaSkillResponse(
-                    updateDate = dateTime.format(alexaSkillFormatter),
-                    titleText = messageSource.getMessage("alexa.next.expensive.period.title", emptyArray(), locale),
-                    mainText = messageSource.getMessage(
-                        "alexa.next.expensive.period.main.no_data",
-                        emptyArray(),
-                        locale
-                    )
-                ), false
+            return AlexaSkillResponse(
+                updateDate = dateTime.format(alexaSkillFormatter),
+                titleText = messageSource.getMessage("alexa.next.expensive.period.title", emptyArray(), locale),
+                mainText = messageSource.getMessage(
+                    "alexa.next.expensive.period.main.no_data",
+                    emptyArray(),
+                    locale
+                )
             )
         }
 
@@ -257,7 +253,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         val expensivePeriodTime = formatAmPm(expensivePeriod[0].dateTime)
 
         // If period hasn't started send message
-        val response = if (expensivePeriod[0].dateTime.isAfter(dateTime)) {
+        return if (expensivePeriod[0].dateTime.isAfter(dateTime)) {
             AlexaSkillResponse(
                 updateDate = dateTime.format(alexaSkillFormatter),
                 titleText = messageSource.getMessage("alexa.next.expensive.period.title", emptyArray(), locale),
@@ -279,7 +275,6 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
                 )
             )
         }
-        return Pair(response, true)
     }
 
 
