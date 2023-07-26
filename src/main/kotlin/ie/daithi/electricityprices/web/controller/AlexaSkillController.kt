@@ -1,5 +1,9 @@
 package ie.daithi.electricityprices.web.controller
 
+import com.amazon.ask.servlet.verifiers.AlexaHttpRequest
+import com.amazon.ask.servlet.verifiers.SkillRequestSignatureVerifier
+import com.amazon.ask.servlet.verifiers.SkillRequestTimestampVerifier
+import ie.daithi.electricityprices.exceptions.BadRequestException
 import ie.daithi.electricityprices.model.AlexaSkillResponse
 import ie.daithi.electricityprices.service.AlexSkillService
 import io.swagger.v3.oas.annotations.Operation
@@ -72,7 +76,7 @@ class AlexaSkillController(private val alexSkillService: AlexSkillService) {
     @ResponseBody
     fun getNextCheapPeriod(@RequestParam(value = "locale", required = false) locale: String?): AlexaSkillResponse {
         val resolvedLocale = locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
-        return alexSkillService.getNextCheapPeriod(locale = resolvedLocale).first
+        return alexSkillService.getNextCheapPeriod(locale = resolvedLocale)
     }
 
     @GetMapping("/alexa/expensive/next")
@@ -87,7 +91,42 @@ class AlexaSkillController(private val alexSkillService: AlexSkillService) {
     @ResponseBody
     fun getNextExpensivePeriod(@RequestParam(value = "locale", required = false) locale: String?): AlexaSkillResponse {
         val resolvedLocale = locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
-        return alexSkillService.getNextExpensivePeriod(locale = resolvedLocale).first
+        return alexSkillService.getNextExpensivePeriod(locale = resolvedLocale)
     }
 
+    @PostMapping("/endpoint")
+    @ResponseStatus(value = HttpStatus.OK)
+    @Operation(
+        summary = "WIP: Alexa skill endpoint",
+        description = "WIP: Endpoint for the alexa skill"
+    )
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Request successful")
+    )
+    @ResponseBody
+    fun processAlexaRequest(
+        @RequestBody requestBody: String,
+        request: AlexaHttpRequest
+    ): List<AlexaSkillResponse> {
+        // setup verifiers
+        val timestampVerifier = SkillRequestTimestampVerifier(10000)
+        val signatureVerifier = SkillRequestSignatureVerifier()
+
+        // validate the request
+        val isValid: Boolean = try {
+            timestampVerifier.verify(request)
+            signatureVerifier.verify(request)
+            true
+        } catch (ex: Exception) {
+            false
+        }
+
+        // process the request if it's valid, else return an error
+        return if (isValid) {
+            return alexSkillService.getFullFeed(Locale.forLanguageTag("es"))
+        } else {
+            // Throw a Bad Request exception
+            throw BadRequestException("Invalid request")
+        }
+    }
 }
