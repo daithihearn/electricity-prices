@@ -104,8 +104,8 @@ class AlexaSkillController(
     @PostMapping("/alexa-skill")
     @ResponseStatus(value = HttpStatus.OK)
     @Operation(
-        summary = "WIP: Alexa skill endpoint",
-        description = "WIP: Endpoint for the alexa skill"
+        summary = "Alexa skill endpoint",
+        description = "Endpoint for the alexa skill"
     )
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Request successful")
