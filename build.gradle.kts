@@ -60,7 +60,7 @@ dependencies {
 
     // Alex Skill
     implementation("org.bouncycastle:bcpkix-jdk15on:1.69")
-    implementation("com.amazon.alexa:ask-sdk:2.42.0")
+    implementation("com.amazon.alexa:ask-sdk:2.82.0")
 
 
     // Other
