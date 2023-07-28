@@ -59,7 +59,9 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0")
 
     // Alex Skill
+    implementation("org.bouncycastle:bcpkix-jdk15on:1.69")
     implementation("com.amazon.alexa:ask-sdk:2.42.0")
+
 
     // Other
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")

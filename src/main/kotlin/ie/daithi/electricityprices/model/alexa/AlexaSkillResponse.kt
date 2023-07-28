@@ -1,4 +1,4 @@
-package ie.daithi.electricityprices.model
+package ie.daithi.electricityprices.model.alexa
 
 import ie.daithi.electricityprices.utils.alexaSkillFormatter
 import java.time.LocalDateTime
