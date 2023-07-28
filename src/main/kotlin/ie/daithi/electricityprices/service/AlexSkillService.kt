@@ -1,6 +1,6 @@
 package ie.daithi.electricityprices.service
 
-import ie.daithi.electricityprices.model.AlexaSkillResponse
+import ie.daithi.electricityprices.model.alexa.AlexaSkillResponse
 import ie.daithi.electricityprices.model.Price
 import ie.daithi.electricityprices.utils.*
 import org.apache.logging.log4j.LogManager

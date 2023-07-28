@@ -1,15 +1,16 @@
 package ie.daithi.electricityprices.web.controller
 
-import com.amazon.ask.servlet.verifiers.AlexaHttpRequest
-import com.amazon.ask.servlet.verifiers.SkillRequestSignatureVerifier
-import com.amazon.ask.servlet.verifiers.SkillRequestTimestampVerifier
-import ie.daithi.electricityprices.exceptions.BadRequestException
-import ie.daithi.electricityprices.model.AlexaSkillResponse
+import com.fasterxml.jackson.databind.ObjectMapper
+import ie.daithi.electricityprices.model.alexa.*
+import ie.daithi.electricityprices.model.alexa.enums.Intent
 import ie.daithi.electricityprices.service.AlexSkillService
+import ie.daithi.electricityprices.web.security.AlexaValidationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
+import org.apache.logging.log4j.LogManager
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import java.util.Locale
@@ -17,7 +18,13 @@ import java.util.Locale
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Alexa", description = "Endpoints that relate to the electricity prices alexa skill")
-class AlexaSkillController(private val alexSkillService: AlexSkillService) {
+class AlexaSkillController(
+    private val alexSkillService: AlexSkillService,
+    private val validationService: AlexaValidationService,
+    private val mapper: ObjectMapper
+) {
+
+    private val logger = LogManager.getLogger(this::class.simpleName)
 
     @GetMapping("/alexa")
     @ResponseStatus(value = HttpStatus.OK)
@@ -94,7 +101,7 @@ class AlexaSkillController(private val alexSkillService: AlexSkillService) {
         return alexSkillService.getNextExpensivePeriod(locale = resolvedLocale)
     }
 
-    @PostMapping("/endpoint")
+    @PostMapping("/alexa-skill")
     @ResponseStatus(value = HttpStatus.OK)
     @Operation(
         summary = "WIP: Alexa skill endpoint",
@@ -104,29 +111,42 @@ class AlexaSkillController(private val alexSkillService: AlexSkillService) {
         ApiResponse(responseCode = "200", description = "Request successful")
     )
     @ResponseBody
-    fun processAlexaRequest(
-        @RequestBody requestBody: String,
-        request: AlexaHttpRequest
-    ): List<AlexaSkillResponse> {
-        // setup verifiers
-        val timestampVerifier = SkillRequestTimestampVerifier(10000)
-        val signatureVerifier = SkillRequestSignatureVerifier()
+    fun processAlexaRequest(@RequestBody rawBody: String, request: HttpServletRequest): AlexaResponse {
+        // Map the rawBody to an AlexaRequest object using the jackson mapper
+        val body = mapper.readValue(rawBody, AlexaRequest::class.java)
 
-        // validate the request
-        val isValid: Boolean = try {
-            timestampVerifier.verify(request)
-            signatureVerifier.verify(request)
-            true
-        } catch (ex: Exception) {
-            false
-        }
+        validationService.validate(request, rawBody, body)
 
-        // process the request if it's valid, else return an error
-        return if (isValid) {
-            return alexSkillService.getFullFeed(Locale.forLanguageTag("es"))
-        } else {
-            // Throw a Bad Request exception
-            throw BadRequestException("Invalid request")
+        val locale = Locale.forLanguageTag("en")
+
+        val intent = body.request?.intent?.name
+
+        val response = when (intent) {
+            Intent.CANCEL.value -> Pair("Goodbye!", true)
+            Intent.HELP.value -> Pair("Say, tell me the current prices", false)
+            Intent.STOP.value -> Pair("Goodbye!", true)
+            Intent.NAVIGATE_HOME.value -> Pair("", false)
+            Intent.FALLBACK.value -> Pair(
+                "Welcome to the electricity prices skill. Say, tell me the current prices",
+                false
+            )
+
+            Intent.FULL.value -> Pair(alexSkillService.getFullFeed(locale).map { it.mainText }.joinToString(" "), false)
+            Intent.TODAY.value -> Pair(alexSkillService.getTodayRating(locale = locale).mainText, false)
+            Intent.TOMORROW.value -> Pair(alexSkillService.getTomorrowRating(locale = locale).first.mainText, false)
+            Intent.NEXT_CHEAP.value -> Pair(alexSkillService.getNextCheapPeriod(locale = locale).mainText, false)
+            Intent.NEXT_EXPENSIVE.value -> Pair(
+                alexSkillService.getNextExpensivePeriod(locale = locale).mainText,
+                false
+            )
+
+            else -> Pair(
+                "Welcome to the electricity prices skill. Say, tell me the current prices",
+                false
+            )
         }
+        val outputSpeech = OutputSpeech(text = response.first)
+        val responseBody = AlexaResponseBody(outputSpeech = outputSpeech, shouldEndSession = response.second)
+        return AlexaResponse(response = responseBody)
     }
 }
