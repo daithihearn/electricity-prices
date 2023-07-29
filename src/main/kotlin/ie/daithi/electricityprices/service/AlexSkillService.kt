@@ -1,6 +1,6 @@
 package ie.daithi.electricityprices.service
 
-import ie.daithi.electricityprices.model.alexa.AlexaSkillResponse
+import ie.daithi.electricityprices.model.DayRating
 import ie.daithi.electricityprices.model.Price
 import ie.daithi.electricityprices.utils.*
 import org.apache.logging.log4j.LogManager
@@ -63,14 +63,18 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         // Round current price to nearest cent
         val currentPriceCents = currentPrice?.price?.times(100)?.roundToInt()
 
+        val rating = calculateRating(dailyAverage, thirtyDayAverage)
+
+        logger.info("dailyAverage: $dailyAverage thirtyDayAverage: $thirtyDayAverage rating: $rating")
+
         val mainText = when {
-            dailyAverage > thirtyDayAverage - 2 -> messageSource.getMessage(
+            rating == DayRating.GOOD -> messageSource.getMessage(
                 "alexa.today.rating.main.good",
                 arrayOf(roundedDailyAverage, currentPriceCents),
                 locale
             )
 
-            dailyAverage < thirtyDayAverage + 2 -> messageSource.getMessage(
+            rating == DayRating.BAD -> messageSource.getMessage(
                 "alexa.today.rating.main.bad",
                 arrayOf(roundedDailyAverage, currentPriceCents),
                 locale
@@ -116,8 +120,10 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         val mostExpensivePeriodAverage = mostExpensivePeriod.map { it.price }.average().times(100).roundToInt()
         val mostExpensivePeriodTime = formatAmPm(mostExpensivePeriod[0].dateTime)
 
+        val rating = calculateRating(dailyAverage, thirtyDayAverage)
+
         val mainText = when {
-            dailyAverage > thirtyDayAverage - 2 -> messageSource.getMessage(
+            rating == DayRating.GOOD -> messageSource.getMessage(
                 "alexa.tomorrow.rating.main.good",
                 arrayOf(
                     roundedDailyAverage,
@@ -129,7 +135,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
                 locale
             )
 
-            dailyAverage < thirtyDayAverage + 2 -> messageSource.getMessage(
+            rating == DayRating.BAD -> messageSource.getMessage(
                 "alexa.tomorrow.rating.main.bad",
                 arrayOf(
                     roundedDailyAverage,
