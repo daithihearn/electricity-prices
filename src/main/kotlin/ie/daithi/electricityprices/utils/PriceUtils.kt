@@ -1,5 +1,6 @@
 package ie.daithi.electricityprices.utils
 
+import ie.daithi.electricityprices.model.DayRating
 import ie.daithi.electricityprices.model.Price
 
 const val VARIANCE = 0.02
@@ -40,9 +41,7 @@ fun getTwoCheapestPeriods(prices: List<Price>, n: Int): Pair<List<Price>, List<P
     val firstPeriodBefore = getCheapestPeriod(remainingPricesBefore, n)
     val firstPeriodAfter = getCheapestPeriod(remainingPricesAfter, n)
 
-    var secondPeriod = emptyList<Price>()
-
-    secondPeriod = if (firstPeriodBefore.size == n && firstPeriodAfter.size == n) {
+    var secondPeriod = if (firstPeriodBefore.size == n && firstPeriodAfter.size == n) {
         val firstPeriodBeforeAverage = calculateAverage(firstPeriodBefore)
         val firstPeriodAfterAverage = calculateAverage(firstPeriodAfter)
 
@@ -62,7 +61,10 @@ fun getTwoCheapestPeriods(prices: List<Price>, n: Int): Pair<List<Price>, List<P
     return if (secondPeriod.isEmpty() || kotlin.math.abs(firstPeriodAverage - secondPeriodAverage) > VARIANCE) {
         Pair(firstPeriod, emptyList())
     } else {
-        if (firstPeriod[0].dateTime.isBefore(secondPeriod[0].dateTime)) Pair(firstPeriod, secondPeriod) else Pair(secondPeriod, firstPeriod)
+        if (firstPeriod[0].dateTime.isBefore(secondPeriod[0].dateTime)) Pair(firstPeriod, secondPeriod) else Pair(
+            secondPeriod,
+            firstPeriod
+        )
     }
 }
 
@@ -91,4 +93,14 @@ fun getMostExpensivePeriod(prices: List<Price>, n: Int): List<Price> {
 
 fun calculateAverage(prices: List<Price>): Double {
     return prices.map { it.price }.average()
+}
+
+
+fun calculateRating(price: Double, thirtyDayAverage: Double): DayRating {
+    val variance = price - thirtyDayAverage
+    return when {
+        variance < -VARIANCE -> DayRating.GOOD
+        variance > VARIANCE -> DayRating.BAD
+        else -> DayRating.NORMAL
+    }
 }
