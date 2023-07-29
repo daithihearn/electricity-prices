@@ -254,4 +254,64 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         }
     }
 
+    fun getThirtyDayAverage(
+        thirtyDayAverage: Double = priceSerice.getThirtyDayAverage(), locale: Locale
+    ): String {
+        val thirtyDayAverageRounded = thirtyDayAverage.times(100).roundToInt()
+        val thirtyDayAverageText = messageSource.getMessage(
+            "alexa.thirty.day.average.main",
+            arrayOf(thirtyDayAverageRounded),
+            locale
+        )
+
+        return thirtyDayAverageText
+    }
+
+    fun getDailyAverage(
+        dateTime: LocalDateTime = LocalDateTime.now(),
+        pricesToday: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()), locale: Locale
+    ): String {
+        if (pricesToday.isEmpty()) {
+            return messageSource.getMessage(
+                "alexa.today.no_data",
+                emptyArray(),
+                locale
+            )
+        }
+
+        val dailyAverage = pricesToday.map { it.price }.average()
+
+        val dailyAverageRounded = dailyAverage.times(100).roundToInt()
+        val dailyAverageText = messageSource.getMessage(
+            "alexa.daily.average.main",
+            arrayOf(dailyAverageRounded),
+            locale
+        )
+
+        return dailyAverageText
+    }
+
+    fun getCurrentPrice(
+        dateTime: LocalDateTime = LocalDateTime.now(),
+        pricesToday: List<Price> = priceSerice.getPrices(dateTime.toLocalDate()), locale: Locale
+    ): String {
+        val currentPrice = pricesToday.find { it.dateTime.hour == dateTime.hour }
+            ?: return messageSource.getMessage(
+                "alexa.today.no_data",
+                emptyArray(),
+                locale
+            )
+
+        // Round current price to nearest cent
+        val currentPriceCents = currentPrice.price.times(100).roundToInt()
+
+        val currentPriceText = messageSource.getMessage(
+            "alexa.current.price.main",
+            arrayOf(currentPriceCents),
+            locale
+        )
+
+        return currentPriceText
+    }
+
 }

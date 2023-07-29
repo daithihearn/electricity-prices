@@ -47,88 +47,6 @@ class AlexaSkillController(
         )
     }
 
-    @GetMapping("/alexa/today")
-    @ResponseStatus(value = HttpStatus.OK)
-    @Operation(
-        summary = "Get today's price and rating",
-        description = "Returns the JSON message for today's price and rating"
-    )
-    @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Request successful")
-    )
-    @ResponseBody
-    fun getTodayRating(@RequestParam(value = "locale", required = false) locale: String?): AlexaSkillResponse {
-        val resolvedLocale = locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
-
-        return wrapInSkillResponse(
-            message = alexSkillService.getTodayRating(locale = resolvedLocale),
-            title = messageSource.getMessage("alexa.today.rating.title", emptyArray(), resolvedLocale)
-        )
-    }
-
-    @GetMapping("/alexa/tomorrow")
-    @ResponseStatus(value = HttpStatus.OK)
-    @Operation(
-        summary = "Get tomorrow's price and rating",
-        description = "Returns the JSON message for tomorrow's price and rating"
-    )
-    @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Request successful")
-    )
-    @ResponseBody
-    fun getTomorrowRating(@RequestParam(value = "locale", required = false) locale: String?): AlexaSkillResponse {
-        val resolvedLocale = locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
-        return wrapInSkillResponse(
-            message = alexSkillService.getTomorrowRating(locale = resolvedLocale).first,
-            title = messageSource.getMessage(
-                "alexa.tomorrow.rating.title",
-                emptyArray(),
-                resolvedLocale
-            )
-        )
-    }
-
-    @GetMapping("/alexa/cheap/next")
-    @ResponseStatus(value = HttpStatus.OK)
-    @Operation(
-        summary = "Get the next cheap period",
-        description = "Returns the JSON message for the next cheap period"
-    )
-    @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Request successful")
-    )
-    @ResponseBody
-    fun getNextCheapPeriod(@RequestParam(value = "locale", required = false) locale: String?): AlexaSkillResponse {
-        val resolvedLocale = locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
-        return wrapInSkillResponse(
-            message = alexSkillService.getNextCheapPeriod(locale = resolvedLocale),
-            title = messageSource.getMessage("alexa.cheap.period.title", emptyArray(), resolvedLocale)
-        )
-    }
-
-    @GetMapping("/alexa/expensive/next")
-    @ResponseStatus(value = HttpStatus.OK)
-    @Operation(
-        summary = "Get the next expensive period",
-        description = "Returns the JSON message for the next expensive period"
-    )
-    @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Request successful")
-    )
-    @ResponseBody
-    fun getNextExpensivePeriod(@RequestParam(value = "locale", required = false) locale: String?): AlexaSkillResponse {
-        val resolvedLocale = locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
-
-        return wrapInSkillResponse(
-            message = alexSkillService.getNextExpensivePeriod(locale = resolvedLocale),
-            title = messageSource.getMessage(
-                "alexa.expensive.period.title",
-                emptyArray(),
-                resolvedLocale
-            )
-        )
-    }
-
     @PostMapping("/alexa-skill")
     @ResponseStatus(value = HttpStatus.OK)
     @Operation(
@@ -167,6 +85,10 @@ class AlexaSkillController(
                 alexSkillService.getNextExpensivePeriod(locale = locale),
                 false
             )
+
+            Intent.CURRENT_PRICE.value -> Pair(alexSkillService.getCurrentPrice(locale = locale), false)
+            Intent.TODAY_AVERAGE.value -> Pair(alexSkillService.getDailyAverage(locale = locale), false)
+            Intent.THIRTY_DAY_AVERAGE.value -> Pair(alexSkillService.getThirtyDayAverage(locale = locale), false)
 
             else -> Pair(
                 "Welcome to the electricity prices skill. Say, tell me the current prices",
