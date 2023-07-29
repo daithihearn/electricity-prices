@@ -68,12 +68,12 @@ class AlexaSkillController(
         val intent = body.request?.intent?.name
 
         val response = when (intent) {
-            Intent.CANCEL.value -> Pair("Goodbye!", true)
-            Intent.HELP.value -> Pair("Say, tell me the current prices", false)
-            Intent.STOP.value -> Pair("Goodbye!", true)
+            Intent.CANCEL.value -> Pair(messageSource.getMessage("alexa.cancel", emptyArray(), locale), true)
+            Intent.HELP.value -> Pair(messageSource.getMessage("alexa.help", emptyArray(), locale), false)
+            Intent.STOP.value -> Pair(messageSource.getMessage("alexa.stop", emptyArray(), locale), true)
             Intent.NAVIGATE_HOME.value -> Pair("", false)
             Intent.FALLBACK.value -> Pair(
-                "Welcome to the electricity prices skill. Say, tell me the current prices",
+                messageSource.getMessage("alexa.welcome", emptyArray(), locale),
                 false
             )
 
@@ -91,7 +91,7 @@ class AlexaSkillController(
             Intent.THIRTY_DAY_AVERAGE.value -> Pair(alexSkillService.getThirtyDayAverage(locale = locale), false)
 
             else -> Pair(
-                "Welcome to the electricity prices skill. Say, tell me the current prices",
+                messageSource.getMessage("alexa.welcome", emptyArray(), locale),
                 false
             )
         }
