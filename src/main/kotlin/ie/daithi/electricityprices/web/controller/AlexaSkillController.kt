@@ -63,7 +63,7 @@ class AlexaSkillController(
 
         validationService.validate(request, rawBody, body)
 
-        val locale = Locale.forLanguageTag("en")
+        val locale = body.request?.locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
 
         val intent = body.request?.intent?.name
 
