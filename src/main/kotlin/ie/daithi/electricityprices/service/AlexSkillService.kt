@@ -116,7 +116,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         val cheapestPeriodTime = formatAmPm(cheapestPeriod[0].dateTime)
 
         // Get most expensive period
-        val mostExpensivePeriod = getCheapestPeriod(pricesTomorrow, 3)
+        val mostExpensivePeriod = getMostExpensivePeriod(pricesTomorrow, 3)
         val mostExpensivePeriodAverage = mostExpensivePeriod.map { it.price }.average().times(100).roundToInt()
         val mostExpensivePeriodTime = formatAmPm(mostExpensivePeriod[0].dateTime)
 

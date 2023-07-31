@@ -2,7 +2,6 @@ package ie.daithi.electricityprices.web.security
 
 import ie.daithi.electricityprices.model.alexa.AlexaRequest
 import jakarta.servlet.http.HttpServletRequest
-import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import java.net.URL
 import java.security.cert.CertificateFactory
