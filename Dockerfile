@@ -19,6 +19,6 @@ FROM eclipse-temurin:17
 
 WORKDIR /opt/app
 
-COPY --from=builder /opt/app/build/libs/electricity-prices*.jar /opt/app/app.jar
+COPY --from=builder /opt/app/build/libs/electricity-prices.jar /opt/app/app.jar
 
 ENTRYPOINT ["java", "-Djdk.tls.client.protocols=TLSv1.2", "-jar", "./app.jar", "-XX:+UseContainerSupport"]

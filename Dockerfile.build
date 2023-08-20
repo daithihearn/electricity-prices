@@ -15,4 +15,4 @@ COPY ./src ./src
 
 RUN ./gradlew build publishToMavenLocal
 
-CMD ["cat", "/opt/app/build/libs/electricity-prices*.jar"]
+CMD ["cat", "/opt/app/build/libs/electricity-prices.jar"]

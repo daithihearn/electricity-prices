@@ -90,6 +90,7 @@ tasks.withType<KotlinCompile> {
 
 tasks.getByName<BootJar>("bootJar") {
     enabled = true
+    archiveFileName.set("electricity-prices.jar")
 }
 
 tasks.getByName<Jar>("jar") {
