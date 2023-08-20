@@ -1,0 +1,18 @@
+FROM eclipse-temurin:17 AS builder
+
+WORKDIR /opt/app
+
+COPY ./gradle ./gradle
+COPY ./gradlew ./
+
+RUN ./gradlew
+
+COPY ./build.gradle.kts ./
+COPY ./settings.gradle ./
+COPY ./system.properties ./
+COPY ./.version ./
+COPY ./src ./src
+
+RUN ./gradlew build publishToMavenLocal
+
+CMD ["cat", "/opt/app/build/libs/electricity-prices*.jar"]
