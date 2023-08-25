@@ -9,7 +9,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 
 @Component
-@Profile("prod")
+@Profile("price-sync")
 class PriceManager(
     private val esiosSync: EsiosSync,
     private val reeSync: ReeSync
