@@ -8,18 +8,14 @@ import org.springframework.stereotype.Component
 import java.time.LocalDate
 
 @Component
-open class EsiosSync(private val priceService: PriceService) {
+open class EsiosSync(
+    private val priceService: PriceService,
+    @Value("\${SYNC_START_DATE:2014-03-31}") private val startDateStr: String
+) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${SYNC_START_DATE:2014-03-31}")
-    private lateinit var startDateStr: String
-
-    private lateinit var lastSyncedDate: LocalDate
-
-    init {
-        lastSyncedDate = LocalDate.parse(startDateStr, dateFormatter)
-    }
+    private var lastSyncedDate: LocalDate = LocalDate.parse(startDateStr, dateFormatter)
 
     fun start() {
         logger.info("Starting ESIOS PVPC sync from: $lastSyncedDate")
