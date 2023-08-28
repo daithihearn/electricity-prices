@@ -111,9 +111,9 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         val roundedDailyAverage = dailyAverage.times(100).roundToInt()
 
         // Get cheapest period
-        val cheapestPeriod = getCheapestPeriod(pricesTomorrow, 3)
-        val cheapestPeriodAverage = cheapestPeriod.map { it.price }.average().times(100).roundToInt()
-        val cheapestPeriodTime = formatAmPm(cheapestPeriod[0].dateTime)
+        val twoCheapPeriods = getTwoCheapestPeriods(pricesTomorrow, 3)
+        val cheapestPeriod1Average = twoCheapPeriods.first.map { it.price }.average().times(100).roundToInt()
+        val cheapestPeriod1Time = formatAmPm(twoCheapPeriods.first[0].dateTime)
 
         // Get most expensive period
         val mostExpensivePeriod = getMostExpensivePeriod(pricesTomorrow, 3)
@@ -122,42 +122,94 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
 
         val rating = calculateRating(dailyAverage, thirtyDayAverage)
 
-        val mainText = when {
-            rating == DayRating.GOOD -> messageSource.getMessage(
-                "alexa.tomorrow.rating.main.good",
-                arrayOf(
-                    roundedDailyAverage,
-                    cheapestPeriodTime,
-                    cheapestPeriodAverage,
-                    mostExpensivePeriodTime,
-                    mostExpensivePeriodAverage
-                ),
-                locale
-            )
+        val mainText = if (twoCheapPeriods.second.isNotEmpty()) {
+            when (rating) {
+                DayRating.GOOD -> messageSource.getMessage(
+                    "alexa.tomorrow.rating.main.single.good",
+                    arrayOf(
+                        roundedDailyAverage,
+                        cheapestPeriod1Average,
+                        cheapestPeriod1Time,
+                        twoCheapPeriods.first.size,
+                        mostExpensivePeriodTime,
+                        mostExpensivePeriodAverage
+                    ),
+                    locale
+                )
 
-            rating == DayRating.BAD -> messageSource.getMessage(
-                "alexa.tomorrow.rating.main.bad",
-                arrayOf(
-                    roundedDailyAverage,
-                    cheapestPeriodTime,
-                    cheapestPeriodAverage,
-                    mostExpensivePeriodTime,
-                    mostExpensivePeriodAverage
-                ),
-                locale
-            )
+                DayRating.BAD -> messageSource.getMessage(
+                    "alexa.tomorrow.rating.main.single.bad",
+                    arrayOf(
+                        roundedDailyAverage,
+                        cheapestPeriod1Average,
+                        cheapestPeriod1Time,
+                        twoCheapPeriods.first.size,
+                        mostExpensivePeriodTime,
+                        mostExpensivePeriodAverage
+                    ),
+                    locale
+                )
 
-            else -> messageSource.getMessage(
-                "alexa.tomorrow.rating.main.normal",
-                arrayOf(
-                    roundedDailyAverage,
-                    cheapestPeriodTime,
-                    cheapestPeriodAverage,
-                    mostExpensivePeriodTime,
-                    mostExpensivePeriodAverage
-                ),
-                locale
-            )
+                DayRating.NORMAL -> messageSource.getMessage(
+                    "alexa.tomorrow.rating.main.single.normal",
+                    arrayOf(
+                        roundedDailyAverage,
+                        cheapestPeriod1Average,
+                        cheapestPeriod1Time,
+                        twoCheapPeriods.first.size,
+                        mostExpensivePeriodTime,
+                        mostExpensivePeriodAverage
+                    ),
+                    locale
+                )
+            }
+        } else {
+            val cheapestPeriod2Average = twoCheapPeriods.second.map { it.price }.average().times(100).roundToInt()
+            val cheapestPeriod2Time = formatAmPm(twoCheapPeriods.second[0].dateTime)
+            when (rating) {
+                DayRating.GOOD -> messageSource.getMessage(
+                    "alexa.tomorrow.rating.main.double.good",
+                    arrayOf(
+                        roundedDailyAverage,
+                        cheapestPeriod1Average,
+                        cheapestPeriod1Time,
+                        cheapestPeriod2Average,
+                        cheapestPeriod2Time,
+                        mostExpensivePeriodTime,
+                        mostExpensivePeriodAverage,
+                    ),
+                    locale
+                )
+
+                DayRating.BAD -> messageSource.getMessage(
+                    "alexa.tomorrow.rating.main.double.bad",
+                    arrayOf(
+                        roundedDailyAverage,
+                        cheapestPeriod1Average,
+                        cheapestPeriod1Time,
+                        cheapestPeriod2Average,
+                        cheapestPeriod2Time,
+                        mostExpensivePeriodTime,
+                        mostExpensivePeriodAverage,
+                    ),
+                    locale
+                )
+
+                DayRating.NORMAL -> messageSource.getMessage(
+                    "alexa.tomorrow.rating.main.double.normal",
+                    arrayOf(
+                        roundedDailyAverage,
+                        cheapestPeriod1Average,
+                        cheapestPeriod1Time,
+                        cheapestPeriod2Average,
+                        cheapestPeriod2Time,
+                        mostExpensivePeriodTime,
+                        mostExpensivePeriodAverage,
+                    ),
+                    locale
+                )
+            }
+
         }
 
         return Pair(
