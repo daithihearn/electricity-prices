@@ -61,10 +61,10 @@ class PriceService(
                     }T23:59"
                 )
                 .retrieve().bodyToMono(ReePrice::class.java).block()
-            if (reePrices == null || reePrices.included.isNullOrEmpty())
+            if (reePrices == null || reePrices.included.isEmpty())
                 throw DataNotAvailableYetException("Tomorrow's data is not available yet")
 
-            val pvpc = reePrices?.included?.find { it.id == "1001" }
+            val pvpc = reePrices.included.find { it.id == "1001" }
             val prices = pvpc?.attributes?.values?.map {
                 Price(
                     dateTime = LocalDateTime.parse(it.datetime, dateTimeOffsetFormatter),
