@@ -122,4 +122,17 @@ class PriceUtilsTest {
             assert(periods.first[5].id == "969f61dec7a9092804bb47b112a496d2")
         }
     }
+
+    @Nested
+    inner class GetMostExpensivePeriod {
+        @Test
+        fun `getMostExpensivePeriod - 2023-08-27`() {
+            val period = getMostExpensivePeriod(prices27, 3)
+            assert(period.size == 3)
+
+            assert(period[0].id == "863a81aa579222acc6b83d8bd837c754")
+            assert(period[1].id == "14501e04e30b110a3208473d7a3fa128")
+            assert(period[2].id == "7584af259bb7aa6a7c6f67979ef2f4d3")
+        }
+    }
 }
