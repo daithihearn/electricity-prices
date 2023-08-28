@@ -198,7 +198,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
         return if (nextPeriod[0].dateTime.isAfter(dateTime)) {
             messageSource.getMessage(
                 "alexa.next.cheap.period.main",
-                arrayOf(cheapestPeriodTime, averagePrice),
+                arrayOf(cheapestPeriodTime, averagePrice, nextPeriod.size),
                 locale
 
             )
@@ -206,7 +206,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
             // We are currently in the good period
             messageSource.getMessage(
                 "alexa.current.cheap.period.main",
-                arrayOf(cheapestPeriodTime, averagePrice),
+                arrayOf(cheapestPeriodTime, averagePrice, nextPeriod.size),
                 locale
             )
 
