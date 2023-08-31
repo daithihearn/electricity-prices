@@ -39,14 +39,15 @@ class PriceService(
         return priceRepo.dateTimeBetween(startDate, endDate)
     }
 
-    fun getDailyPriceInfo(date: String?): DailyPriceInfo {
-        val prices = getPrices(start = date, end = date)
+    fun getDailyPriceInfo(dateStr: String?): DailyPriceInfo {
+        val date = dateStr?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
+        val prices = getPrices(start = dateStr, end = dateStr)
         val cheapestPeriods = getTwoCheapestPeriods(prices, 3)
         val expensivePeriod = getCheapestPeriod(prices, 3)
 
         val dailyAverage = prices.map { it.price }.average()
-        val thirtyDayAverage: Double = getThirtyDayAverage()
-        
+        val thirtyDayAverage: Double = getThirtyDayAverage(date.atStartOfDay())
+
         return DailyPriceInfo(
             dayRating = calculateRating(dailyAverage, thirtyDayAverage),
             prices = prices,
@@ -96,9 +97,8 @@ class PriceService(
         }
     }
 
-    fun getThirtyDayAverage(): Double {
-        val now = LocalDateTime.now()
-        return getPrices(start = now.toLocalDate().minusDays(30).format(dateFormatter), end = null)
+    fun getThirtyDayAverage(date: LocalDateTime? = LocalDateTime.now()): Double {
+        return getPrices(start = date?.toLocalDate()?.minusDays(30)?.format(dateFormatter), end = null)
             .map { it.price }.average()
     }
 
