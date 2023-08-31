@@ -1,6 +1,7 @@
 package ie.daithi.electricityprices.service
 
 import ie.daithi.electricityprices.exceptions.DataNotAvailableYetException
+import ie.daithi.electricityprices.model.DailyPriceInfo
 import ie.daithi.electricityprices.model.EsiosPrice
 import ie.daithi.electricityprices.model.Price
 import ie.daithi.electricityprices.model.ReePrice
@@ -36,6 +37,22 @@ class PriceService(
 
         logger.info("Getting prices between $startDate and $endDate")
         return priceRepo.dateTimeBetween(startDate, endDate)
+    }
+
+    fun getDailyPriceInfo(date: String?): DailyPriceInfo {
+        val prices = getPrices(start = date, end = date)
+        val cheapestPeriods = getTwoCheapestPeriods(prices, 3)
+        val expensivePeriod = getCheapestPeriod(prices, 3)
+
+        val dailyAverage = prices.map { it.price }.average()
+        val thirtyDayAverage: Double = getThirtyDayAverage()
+        
+        return DailyPriceInfo(
+            dayRating = calculateRating(dailyAverage, thirtyDayAverage),
+            prices = prices,
+            cheapestPeriods = cheapestPeriods,
+            expensivePeriod = expensivePeriod
+        )
     }
 
     /*
@@ -137,4 +154,6 @@ class PriceService(
         }
         return true
     }
+
+
 }
