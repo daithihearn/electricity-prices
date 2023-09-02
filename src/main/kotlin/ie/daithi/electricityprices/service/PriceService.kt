@@ -43,7 +43,7 @@ class PriceService(
         val date = dateStr?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
         val prices = getPrices(start = dateStr, end = dateStr)
         val cheapestPeriods = getTwoCheapestPeriods(prices, 3)
-        val expensivePeriod = getCheapestPeriod(prices, 3)
+        val expensivePeriod = getMostExpensivePeriod(prices, 3)
 
         val dailyAverage = prices.map { it.price }.average()
         val thirtyDayAverage: Double = getThirtyDayAverage(date.atStartOfDay())
