@@ -50,6 +50,7 @@ class PriceService(
 
         return DailyPriceInfo(
             dayRating = calculateRating(dailyAverage, thirtyDayAverage),
+            thirtyDayAverage = thirtyDayAverage,
             prices = prices,
             cheapestPeriods = cheapestPeriods,
             expensivePeriod = expensivePeriod
