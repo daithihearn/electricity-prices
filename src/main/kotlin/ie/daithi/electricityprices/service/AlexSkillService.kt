@@ -89,7 +89,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
 
         val roundedDailyAverage = dailyAverage.times(100).roundToInt()
 
-        // Get cheapest period
+        // Get the cheapest periods
         val twoCheapPeriods = getTwoCheapestPeriods(pricesTomorrow, 3)
         val cheapestPeriod1Average = twoCheapPeriods.first.map { it.price }.average().times(100).roundToInt()
         val cheapestPeriod1Time = formatAmPm(twoCheapPeriods.first[0].dateTime)
@@ -103,7 +103,7 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
 
         val ratingText = getTomorrowRatingText(rating, roundedDailyAverage, locale)
 
-        val mainText = if (twoCheapPeriods.second.isNotEmpty()) {
+        val mainText = if (twoCheapPeriods.second.isEmpty()) {
             messageSource.getMessage(
                 "alexa.tomorrow.rating.single",
                 arrayOf(
