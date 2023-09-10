@@ -39,9 +39,10 @@ class PriceService(
         return priceRepo.dateTimeBetween(startDate, endDate)
     }
 
-    fun getDailyPriceInfo(dateStr: String?): DailyPriceInfo {
-        val date = dateStr?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
+    fun getDailyPriceInfo(dateStr: String): DailyPriceInfo? {
+        val date = LocalDate.parse(dateStr, dateFormatter)
         val prices = getPrices(start = dateStr, end = dateStr)
+        if (prices.isEmpty()) return null
         val cheapestPeriods = getTwoCheapestPeriods(prices, 3)
         val expensivePeriod = getMostExpensivePeriod(prices, 3)
 
