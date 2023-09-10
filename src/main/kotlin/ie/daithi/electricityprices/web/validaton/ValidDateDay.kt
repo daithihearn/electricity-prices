@@ -22,9 +22,10 @@ annotation class ValidDateDay(
 
 class DateDayValidator : ConstraintValidator<ValidDateDay, String> {
     override fun isValid(
-        value: String,
+        value: String?,
         constraintValidatorContext: ConstraintValidatorContext
     ): Boolean {
+        if (value == null) return true
         return try {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             LocalDate.parse(value, formatter)

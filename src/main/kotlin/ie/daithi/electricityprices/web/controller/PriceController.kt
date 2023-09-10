@@ -34,29 +34,64 @@ class PriceController(
                 "If no start date is provided the default is the start of the current day. If no end date is " +
                 "provided the default is the end of today. Dates should be given in a string form yyyy-MM-dd"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "start",
+        schema = Schema(type = "string", pattern = "\\d{4}-\\d{2}-\\d{2}"),
+        description = "Start date for query (defaults to today)",
+        required = false,
+        example = "2023-08-30"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "end",
+        schema = Schema(type = "string", pattern = "\\d{4}-\\d{2}-\\d{2}"),
+        description = "End date for query (defaults to today)",
+        required = false,
+        example = "2023-08-30"
+    )
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Request successful")
+        value = [
+            ApiResponse(responseCode = "200", description = "Request successful"),
+            ApiResponse(
+                responseCode = "422", description = "Invalid date", content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = UnprocessableEntityException::class),
+                    examples = [
+                        ExampleObject(
+                            value = "{\n" +
+                                    "  \"timestamp\": \"2023-09-10T10:03:38.111+00:00\",\n" +
+                                    "  \"status\": 422,\n" +
+                                    "  \"error\": \"Unprocessable Entity\",\n" +
+                                    "  \"message\": \"\"getPrices.start: The provided date is invalid. It must match yyyy-MM-dd\",\n" +
+                                    "  \"path\": \"/api/v1/price?start=junk\"\n" +
+                                    "}"
+                        )
+                    ]
+                )]
+            )
+        ]
     )
     @ResponseBody
     fun getPrices(
-        @RequestParam(required = false) start: String?,
-        @RequestParam(required = false) end: String?
+        @ValidDateDay @RequestParam(required = false) start: String?,
+        @ValidDateDay @RequestParam(required = false) end: String?
     ): List<Price> {
         return priceSerice.getPrices(start, end)
     }
 
-    @GetMapping("/price/dailyinfo/{date}")
+    @GetMapping("/price/dailyinfo")
     @ResponseStatus(value = HttpStatus.OK)
     @Operation(
         summary = "Get price info", description = "Returns price info for the date provided. " +
                 "If no date is provided the default is the current day. Dates should be given in a string form yyyy-MM-dd"
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
+        `in` = ParameterIn.QUERY,
         name = "date",
         schema = Schema(type = "string", pattern = "\\d{4}-\\d{2}-\\d{2}"),
         description = "Address of the transaction origin",
-        required = true,
+        required = false,
         example = "2023-08-30"
     )
     @ApiResponses(
@@ -73,7 +108,7 @@ class PriceController(
                                     "  \"status\": 404,\n" +
                                     "  \"error\": \"Not Found\",\n" +
                                     "  \"message\": \"No data available for 2024-01-01\",\n" +
-                                    "  \"path\": \"/api/v1/price/dailyinfo/2024-01-01\"\n" +
+                                    "  \"path\": \"/api/v1/price/dailyinfo?date=2024-01-01\"\n" +
                                     "}"
                         )
                     ]
@@ -99,7 +134,7 @@ class PriceController(
         ]
     )
     @ResponseBody
-    fun getDailyPriceInfo(@ValidDateDay @PathVariable date: String): DailyPriceInfo {
+    fun getDailyPriceInfo(@ValidDateDay @RequestParam(required = false) date: String?): DailyPriceInfo {
         return priceSerice.getDailyPriceInfo(date) ?: throw DataNotAvailableYetException("No data available for $date")
     }
 }
