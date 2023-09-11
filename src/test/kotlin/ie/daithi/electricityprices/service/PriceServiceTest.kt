@@ -21,7 +21,7 @@ class PriceServiceTest {
     private val priceService = PriceService(priceRepo, reeRest, esiosRest)
 
     @Nested
-    inner class getPrices {
+    inner class GetPricesTest {
         @Test
         fun `getPrices - date`() {
             val date = LocalDate.parse("2023-08-25", dateFormatter)
