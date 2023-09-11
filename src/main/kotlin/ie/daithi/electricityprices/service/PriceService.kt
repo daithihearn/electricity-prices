@@ -70,19 +70,17 @@ class PriceService(
         // Get the prices for tomorrow
         val currPrices = getPrices(date)
 
+        val dayStr = date.format(dateFormatter)
+
         // Validate that we have prices for the day
         if (!validatePricesForDay(currPrices, date)) {
             val reePrices = reeRest.get()
                 .uri(
-                    "?time_trunc=hour&start_date=${previousDay.format(dateFormatter)}T00:00&end_date=${
-                        date.format(
-                            dateFormatter
-                        )
-                    }T23:59"
+                    "?time_trunc=hour&start_date=${previousDay.format(dateFormatter)}T00:00&end_date=${dayStr}T23:59"
                 )
                 .retrieve().bodyToMono(ReePrice::class.java).block()
             if (reePrices == null || reePrices.included.isEmpty())
-                throw DataNotAvailableYetException("Tomorrow's data is not available yet")
+                throw DataNotAvailableYetException("Data is not available yet for $dayStr on REE")
 
             val pvpc = reePrices.included.find { it.id == "1001" }
             val prices = pvpc?.attributes?.values?.map {
@@ -92,10 +90,10 @@ class PriceService(
                 )
             }
 
-            logger.info("Saving ${prices?.size} prices")
+            logger.info("Saving ${prices?.size} prices for $dayStr from REE")
             priceRepo.saveAll(prices ?: emptyList())
         } else {
-            logger.info("Price data for tomorrow is already up-to-date")
+            logger.info("Price data for $dayStr is already up-to-date. REE sync not required.")
         }
     }
 
@@ -120,12 +118,13 @@ class PriceService(
             priceRepo.deleteAll(prices)
 
             // Get the prices from ESIOS
-            val query = "?date=${day.format(dateFormatter)}"
+            val dayStr = day.format(dateFormatter)
+            val query = "?date=$dayStr"
             val esiosPrices = esiosRest.get().uri(query).retrieve().bodyToMono(EsiosPrice::class.java).block()
             if ((esiosPrices == null || esiosPrices.pvpc.isNullOrEmpty()) && day.isAfter(LocalDate.now()))
-                throw DataNotAvailableYetException("Tomorrow's data is not available yet")
+                throw DataNotAvailableYetException("Data is not available yet for $dayStr on ESIOS")
 
-            logger.info("Received ${esiosPrices?.pvpc?.size} prices from ESIOS")
+            logger.info("Saving ${esiosPrices?.pvpc?.size} prices for $dayStr from ESIOS")
             val prices = esiosPrices?.pvpc?.map {
                 Price(
                     dateTime = LocalDateTime.parse("${it.day}${it.hour.substring(0, 2)}:00:00", esiosFormatter),
@@ -135,7 +134,7 @@ class PriceService(
 
             if (!prices.isNullOrEmpty()) priceRepo.saveAll(prices)
         } else {
-            logger.info("Existing prices for $day are valid")
+            logger.info("Price data for $day is already up-to-date. ESIOS sync not required.")
         }
     }
 
