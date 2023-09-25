@@ -124,8 +124,8 @@ class AlexSkillService(private val priceSerice: PriceService, private val messag
                 arrayOf(
                     cheapestPeriod1Time,
                     cheapestPeriod1Average,
-                    cheapestPeriod2Average,
                     cheapestPeriod2Time,
+                    cheapestPeriod2Average,
                     mostExpensivePeriodTime,
                     mostExpensivePeriodAverage,
                 ),
