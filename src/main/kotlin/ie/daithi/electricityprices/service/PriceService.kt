@@ -43,8 +43,8 @@ class PriceService(
         val date = dateStr?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
         val prices = getPrices(start = dateStr, end = dateStr)
         if (prices.isEmpty()) return null
-        val cheapestPeriods = getTwoCheapestPeriods(prices, 3)
-        val expensivePeriod = getMostExpensivePeriod(prices, 3)
+        val cheapestPeriods = getTwoCheapestPeriods(prices)
+        val expensivePeriod = getMostExpensivePeriod(prices)
 
         val dailyAverage = prices.map { it.price }.average()
         val thirtyDayAverage: Double = getThirtyDayAverage(date.atStartOfDay())
@@ -108,14 +108,14 @@ class PriceService(
      */
     fun syncEsiosData(day: LocalDate) {
         // Get the prices for the day
-        val prices = getPrices(day)
+        val pricesToday = getPrices(day)
 
         // Validate that we have prices for the day
-        if (!validatePricesForDay(prices, day)) {
+        if (!validatePricesForDay(pricesToday, day)) {
             logger.info("Failed to validate prices for $day. Will attempt to sync with ESIOS")
 
             // Clear the prices for the day
-            priceRepo.deleteAll(prices)
+            priceRepo.deleteAll(pricesToday)
 
             // Get the prices from ESIOS
             val dayStr = day.format(dateFormatter)
