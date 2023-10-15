@@ -31,21 +31,49 @@ class PriceUtilsTest {
     inner class GetCheapestPeriod {
 
         @Test
+        fun `getCheapestPeriod - variable period length - empty list`() {
+            val cheapestPeriod = getCheapestPeriod(emptyList())
+            assert(cheapestPeriod.isEmpty())
+        }
+
+        @Test
+        fun `getCheapestPeriod - variable period length 2023-08-18`() {
+            val cheapestPeriod = getCheapestPeriod(prices18)
+            assert(cheapestPeriod.size == 4)
+            assert(cheapestPeriod[0].id == "14:00")
+            assert(cheapestPeriod[1].id == "15:00")
+            assert(cheapestPeriod[2].id == "16:00")
+            assert(cheapestPeriod[3].id == "17:00")
+        }
+
+        @Test
+        fun `getCheapestPeriod - variable period length 2023-08-25`() {
+            val cheapestPeriod = getCheapestPeriod(prices25)
+            assert(cheapestPeriod.size == 6)
+            assert(cheapestPeriod[0].id == "00:00")
+            assert(cheapestPeriod[1].id == "01:00")
+            assert(cheapestPeriod[2].id == "02:00")
+            assert(cheapestPeriod[3].id == "03:00")
+            assert(cheapestPeriod[4].id == "04:00")
+            assert(cheapestPeriod[5].id == "05:00")
+        }
+
+        @Test
         fun `getCheapestPeriod - cheapest 3 hour period 2023-08-26`() {
             val cheapestPeriod = getCheapestPeriod(prices26, 3)
             assert(cheapestPeriod.size == 3)
-            assert(cheapestPeriod[0].id == "07b1debfb24c8d9af3ebad0ba1936cf9")
-            assert(cheapestPeriod[1].id == "fc1747d567c846b18e248aa20b195dca")
-            assert(cheapestPeriod[2].id == "ce8a40a4ce47b6185d51b5b46937cea3")
+            assert(cheapestPeriod[0].id == "14:00")
+            assert(cheapestPeriod[1].id == "15:00")
+            assert(cheapestPeriod[2].id == "16:00")
         }
 
         @Test
         fun `getCheapestPeriod - cheapest 3 hour period 2023-08-27`() {
             val cheapestPeriod = getCheapestPeriod(prices27, 3)
             assert(cheapestPeriod.size == 3)
-            assert(cheapestPeriod[0].id == "ef04918f3e2c63ae863ea1fe79cee6a0")
-            assert(cheapestPeriod[1].id == "68e0b139b3beba16821dfbfe2f3862f1")
-            assert(cheapestPeriod[2].id == "01ad85708347f0f78d5a520600284395")
+            assert(cheapestPeriod[0].id == "12:00")
+            assert(cheapestPeriod[1].id == "13:00")
+            assert(cheapestPeriod[2].id == "14:00")
         }
     }
 
@@ -53,14 +81,74 @@ class PriceUtilsTest {
     inner class GetTwoCheapestPeriods {
 
         @Test
+        fun `getTwoCheapestPeriods - variable period length`() {
+            val periods = getTwoCheapestPeriods(emptyList())
+            assert(periods.first.isEmpty())
+            assert(periods.second.isEmpty())
+        }
+
+        @Test
+        fun `getTwoCheapestPeriods - variable period length 2023-08-18`() {
+            val periods = getTwoCheapestPeriods(prices18)
+
+            assert(periods.first.size == 8)
+            assert(periods.first[0].id == "00:00")
+            assert(periods.first[1].id == "01:00")
+            assert(periods.first[2].id == "02:00")
+            assert(periods.first[3].id == "03:00")
+            assert(periods.first[4].id == "04:00")
+            assert(periods.first[5].id == "05:00")
+            assert(periods.first[6].id == "06:00")
+            assert(periods.first[7].id == "07:00")
+
+            assert(periods.second.size == 4)
+            assert(periods.second[0].id == "14:00")
+            assert(periods.second[1].id == "15:00")
+            assert(periods.second[2].id == "16:00")
+            assert(periods.second[3].id == "17:00")
+        }
+
+        @Test
+        fun `getTwoCheapestPeriods - variable period length 2023-08-23`() {
+            val periods = getTwoCheapestPeriods(prices23)
+
+            assert(periods.first.size == 4)
+            assert(periods.first[0].id == "04:00")
+            assert(periods.first[1].id == "05:00")
+            assert(periods.first[2].id == "06:00")
+            assert(periods.first[3].id == "07:00")
+
+            assert(periods.second.isEmpty())
+        }
+
+        @Test
+        fun `getTwoCheapestPeriods - variable period length 2023-08-25`() {
+            val periods = getTwoCheapestPeriods(prices25)
+
+            assert(periods.first.size == 6)
+            assert(periods.first[0].id == "00:00")
+            assert(periods.first[1].id == "01:00")
+            assert(periods.first[2].id == "02:00")
+            assert(periods.first[3].id == "03:00")
+            assert(periods.first[4].id == "04:00")
+            assert(periods.first[5].id == "05:00")
+
+            assert(periods.second.size == 4)
+            assert(periods.second[0].id == "14:00")
+            assert(periods.second[1].id == "15:00")
+            assert(periods.second[2].id == "16:00")
+            assert(periods.second[3].id == "17:00")
+        }
+
+        @Test
         fun `getTwoCheapestPeriods - cheapest 3 hour period 2023-08-23 - single period`() {
             val period = getTwoCheapestPeriods(prices23, 3)
             assert(period.first.size == 3)
             assert(period.second.isEmpty())
 
-            assert(period.first[0].id == "542e6e3f2adb2656894a232bc4eda185")
-            assert(period.first[1].id == "37b77ebd83b92e23c94f1e0a70932ed2")
-            assert(period.first[2].id == "ed30ce3ed863368649a9aa4e1b9a0141")
+            assert(period.first[0].id == "05:00")
+            assert(period.first[1].id == "06:00")
+            assert(period.first[2].id == "07:00")
         }
 
         @Test
@@ -69,13 +157,13 @@ class PriceUtilsTest {
             assert(periods.first.size == 3)
             assert(periods.second.size == 3)
 
-            assert(periods.first[0].id == "b2956284e7a8360c95c7a96d85c25986")
-            assert(periods.first[1].id == "ed22702aa041f315bb627f005e3e4771")
-            assert(periods.first[2].id == "9a021ff5cec2249464fcc93facae572b")
+            assert(periods.first[0].id == "02:00")
+            assert(periods.first[1].id == "03:00")
+            assert(periods.first[2].id == "04:00")
 
-            assert(periods.second[0].id == "a5af368ad02371db8101239b38e49c74")
-            assert(periods.second[1].id == "1d87e2204fc9a2eb7c273c6a2538a054")
-            assert(periods.second[2].id == "9804be2a1bad648f4bdb1ad50240921d")
+            assert(periods.second[0].id == "15:00")
+            assert(periods.second[1].id == "16:00")
+            assert(periods.second[2].id == "17:00")
         }
 
         @Test
@@ -84,13 +172,13 @@ class PriceUtilsTest {
             assert(periods.first.size == 3)
             assert(periods.second.size == 3)
 
-            assert(periods.first[0].id == "be400151bf0648ec25897a37f4a54160")
-            assert(periods.first[1].id == "11d7476fa500d201ccee4147e0ab2145")
-            assert(periods.first[2].id == "eb10ebda12ba60af79d9721d3346d53a")
+            assert(periods.first[0].id == "03:00")
+            assert(periods.first[1].id == "04:00")
+            assert(periods.first[2].id == "05:00")
 
-            assert(periods.second[0].id == "7c9c4a8720b93bdc534bed80eb344bcb")
-            assert(periods.second[1].id == "a9370544a8990a731f836f62d1eb43fb")
-            assert(periods.second[2].id == "5efd1ed569da3a0e96c9e7ba8bede2e6")
+            assert(periods.second[0].id == "14:00")
+            assert(periods.second[1].id == "15:00")
+            assert(periods.second[2].id == "16:00")
         }
 
         @Test
@@ -99,12 +187,12 @@ class PriceUtilsTest {
             assert(periods.first.size == 6)
             assert(periods.second.isEmpty())
 
-            assert(periods.first[0].id == "3a9966df749d425622a2601cd7b77a22")
-            assert(periods.first[1].id == "ddeef7a2107eb484a1550923ab583dc0")
-            assert(periods.first[2].id == "bb2e68a812b52f3d79c03d6060eea7bf")
-            assert(periods.first[3].id == "07b1debfb24c8d9af3ebad0ba1936cf9")
-            assert(periods.first[4].id == "fc1747d567c846b18e248aa20b195dca")
-            assert(periods.first[5].id == "ce8a40a4ce47b6185d51b5b46937cea3")
+            assert(periods.first[0].id == "11:00")
+            assert(periods.first[1].id == "12:00")
+            assert(periods.first[2].id == "13:00")
+            assert(periods.first[3].id == "14:00")
+            assert(periods.first[4].id == "15:00")
+            assert(periods.first[5].id == "16:00")
 
         }
 
@@ -114,25 +202,41 @@ class PriceUtilsTest {
             assert(periods.first.size == 6)
             assert(periods.second.isEmpty())
 
-            assert(periods.first[0].id == "ef04918f3e2c63ae863ea1fe79cee6a0")
-            assert(periods.first[1].id == "68e0b139b3beba16821dfbfe2f3862f1")
-            assert(periods.first[2].id == "01ad85708347f0f78d5a520600284395")
-            assert(periods.first[3].id == "7e0d5499da953323a3e7224ad7692342")
-            assert(periods.first[4].id == "6688009bd148ba9f2c5365870383d787")
-            assert(periods.first[5].id == "969f61dec7a9092804bb47b112a496d2")
+            assert(periods.first[0].id == "12:00")
+            assert(periods.first[1].id == "13:00")
+            assert(periods.first[2].id == "14:00")
+            assert(periods.first[3].id == "15:00")
+            assert(periods.first[4].id == "16:00")
+            assert(periods.first[5].id == "17:00")
         }
     }
 
     @Nested
     inner class GetMostExpensivePeriod {
+
+        @Test
+        fun `getMostExpensivePeriod - variable period length - empty list`() {
+            val cheapestPeriod = getMostExpensivePeriod(emptyList())
+            assert(cheapestPeriod.isEmpty())
+        }
+
+        @Test
+        fun `getMostExpensivePeriod - variable period length 2023-08-27`() {
+            val period = getMostExpensivePeriod(prices27)
+            assert(period.size == 2)
+
+            assert(period[0].id == "21:00")
+            assert(period[1].id == "22:00")
+        }
+
         @Test
         fun `getMostExpensivePeriod - 2023-08-27`() {
             val period = getMostExpensivePeriod(prices27, 3)
             assert(period.size == 3)
 
-            assert(period[0].id == "863a81aa579222acc6b83d8bd837c754")
-            assert(period[1].id == "14501e04e30b110a3208473d7a3fa128")
-            assert(period[2].id == "7584af259bb7aa6a7c6f67979ef2f4d3")
+            assert(period[0].id == "20:00")
+            assert(period[1].id == "21:00")
+            assert(period[2].id == "22:00")
         }
     }
 }
