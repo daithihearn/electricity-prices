@@ -4,6 +4,6 @@ data class DailyPriceInfo(
     val dayRating: DayRating,
     val thirtyDayAverage: Double,
     val prices: List<Price>,
-    val cheapestPeriods: Pair<List<Price>, List<Price>>,
-    val expensivePeriod: List<Price>,
+    val cheapestPeriods: List<List<Price>>,
+    val expensivePeriods: List<List<Price>>,
 )
