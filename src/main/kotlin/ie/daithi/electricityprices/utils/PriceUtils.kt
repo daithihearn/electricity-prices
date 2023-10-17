@@ -2,233 +2,131 @@ package ie.daithi.electricityprices.utils
 
 import ie.daithi.electricityprices.model.DayRating
 import ie.daithi.electricityprices.model.Price
-import kotlin.math.abs
+import kotlin.math.roundToInt
 
-const val VARIANCE = 0.02
+const val RATING_VARIANCE = 0.02
 
-/**
- * Returns the cheapest period. The period is calculated by getting the cheapest hour and then selecting
- * adjacent hours that fall within a price variance of 0.02.
- */
-fun getCheapestPeriod(prices: List<Price>): List<Price> {
-    val cheapestHour = prices.minByOrNull { it.price } ?: return emptyList()
+// The maximum variance value
+const val MAX_VARIANCE = 0.03
 
-    val cheapestPeriod = mutableListOf(cheapestHour)
-
-    var i = prices.indexOf(cheapestHour) + 1
-    while (i < prices.size && abs(prices[i].price - cheapestHour.price) < VARIANCE) {
-        cheapestPeriod.add(prices[i])
-        i++
-    }
-
-    i = prices.indexOf(cheapestHour) - 1
-    while (i >= 0 && abs(prices[i].price - cheapestHour.price) < VARIANCE) {
-        cheapestPeriod.add(prices[i])
-        i--
-    }
-
-    return cheapestPeriod.sortedBy { it.dateTime }
-}
+const val VARIANCE_DIVISOR = 2
 
 /**
- * Returns the cheapest period of n hours.
- * If there are multiple periods with the same price, the first is returned.
- * If there are less than n prices, an empty list is returned.
+ * Joins prices that are adjacent to each other.
  */
-fun getCheapestPeriod(prices: List<Price>, n: Int): List<Price> {
-    if (prices.size < n) {
-        return emptyList()
-    }
-
-    val pricesSorted = prices.sortedBy { it.dateTime }
-
-    var minSum = Double.POSITIVE_INFINITY
-    var minWindow = emptyList<Price>()
-
-    for (i in 0 until pricesSorted.size - n + 1) {
-        val window = pricesSorted.subList(i, i + n)
-        val windowSum = window.sumOf { it.price }
-
-        if (windowSum < minSum) {
-            minSum = windowSum
-            minWindow = window
+fun joinPrices(cheapPrices: List<Price>): List<List<Price>> {
+    val result = mutableListOf<List<Price>>()
+    var i = 0
+    while (i < cheapPrices.size) {
+        val cheapPeriod = mutableListOf(cheapPrices[i])
+        var j = i + 1
+        while (j < cheapPrices.size && cheapPrices[j].dateTime == cheapPeriod.last().dateTime.plusHours(1)) {
+            cheapPeriod.add(cheapPrices[j])
+            j++
         }
+        result.add(cheapPeriod)
+        i = j
     }
+    return result
+}
 
-    return minWindow
+
+/**
+ * Calculate the variance for the cheap periods.
+ * This is calculated as:
+ * MIN((dailyAverage - cheapestPrice) / VARIANCE_DIVISOR, MAX_VARIANCE)
+ */
+fun calculateCheapVariance(prices: List<Price>): Double {
+    val dailyAverage = calculateAverage(prices)
+    val cheapestPrice = prices.minByOrNull { it.price }?.price ?: return MAX_VARIANCE
+    val variance = (dailyAverage - cheapestPrice) / VARIANCE_DIVISOR
+    return if (variance > MAX_VARIANCE) MAX_VARIANCE else variance
 }
 
 /**
- * Returns the two cheapest periods.
- * If there is only one period that falls within the predefined variance of 0.02, the second period is empty.
+ * Calculate the variance for the expensive periods.
+ * This is calculated as:
+ * MIN((expensivePrice - dailyAverage) / VARIANCE_DIVISOR, MAX_VARIANCE)
  */
-fun getTwoCheapestPeriods(prices: List<Price>): Pair<List<Price>, List<Price>> {
-    if (prices.size < 2) {
-        return Pair(emptyList(), emptyList())
-    }
-
-    val firstPeriod = getCheapestPeriod(prices)
-
-    val remainingPricesBefore = prices.filter { it.dateTime.isBefore(firstPeriod.first().dateTime) }.dropLast(1)
-    val remainingPricesAfter = prices.filter { it.dateTime.isAfter(firstPeriod.last().dateTime) }.drop(1)
-
-    val firstPeriodBefore = getCheapestPeriod(remainingPricesBefore)
-    val firstPeriodAfter = getCheapestPeriod(remainingPricesAfter)
-
-    var secondPeriod: List<Price>
-
-    secondPeriod = if (firstPeriodBefore.isNotEmpty() && firstPeriodAfter.isNotEmpty()) {
-        val firstPeriodBeforeAverage = calculateAverage(firstPeriodBefore)
-        val firstPeriodAfterAverage = calculateAverage(firstPeriodAfter)
-
-        if (firstPeriodBeforeAverage < firstPeriodAfterAverage) firstPeriodBefore else firstPeriodAfter
-    } else if (firstPeriodBefore.isNotEmpty()) {
-        firstPeriodBefore
-    } else if (firstPeriodAfter.isNotEmpty()) {
-        firstPeriodAfter
-    } else {
-        emptyList()
-    }
-
-    if (abs(calculateAverage(firstPeriod) - calculateAverage(secondPeriod)) > VARIANCE) {
-        secondPeriod = emptyList()
-    }
-
-    return when {
-        secondPeriod.isEmpty() || abs(calculateAverage(firstPeriod) - calculateAverage(secondPeriod)) > VARIANCE -> Pair(
-            firstPeriod,
-            emptyList()
-        )
-
-        firstPeriod.last().dateTime == secondPeriod.first().dateTime.minusHours(1) -> Pair(
-            firstPeriod + secondPeriod,
-            emptyList()
-        )
-
-        firstPeriod.first().dateTime == secondPeriod.last().dateTime.plusHours(1) -> Pair(
-            secondPeriod + firstPeriod,
-            emptyList()
-        )
-
-        firstPeriod.first().dateTime.isBefore(secondPeriod.first().dateTime) -> Pair(firstPeriod, secondPeriod)
-        else -> Pair(secondPeriod, firstPeriod)
-    }
+fun calculateExpensiveVariance(prices: List<Price>): Double {
+    val dailyAverage = calculateAverage(prices)
+    val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return MAX_VARIANCE
+    val variance = (expensivePrice - dailyAverage) / VARIANCE_DIVISOR
+    return if (variance > MAX_VARIANCE) MAX_VARIANCE else variance
 }
 
 /**
- * Returns the two cheapest periods of n hours.
- * If there is only one period that falls within the predefined variance of 0.02, the second period is empty.
+ * Check if a price is within the predefined variance of 0.02.
+ * Returns true if the price is 0.02 less than the daily average or within 0.02 of the cheapest price.
  */
-fun getTwoCheapestPeriods(prices: List<Price>, n: Int): Pair<List<Price>, List<Price>> {
-    if (prices.size < n) {
-        return Pair(emptyList(), emptyList())
-    }
+fun isWithinCheapPriceVariance(price: Double, cheapestPrice: Double, variance: Double): Boolean {
+    return price - cheapestPrice <= variance
+}
 
-    val firstPeriod = getCheapestPeriod(prices, n)
-
-    val remainingPricesBefore = prices.filter { it.dateTime.isBefore(firstPeriod.first().dateTime) }
-    val remainingPricesAfter = prices.filter { it.dateTime.isAfter(firstPeriod.last().dateTime) }
-
-    val firstPeriodBefore = getCheapestPeriod(remainingPricesBefore, n)
-    val firstPeriodAfter = getCheapestPeriod(remainingPricesAfter, n)
-
-    var secondPeriod: List<Price>
-
-    secondPeriod = if (firstPeriodBefore.size == n && firstPeriodAfter.size == n) {
-        val firstPeriodBeforeAverage = calculateAverage(firstPeriodBefore)
-        val firstPeriodAfterAverage = calculateAverage(firstPeriodAfter)
-
-        if (firstPeriodBeforeAverage < firstPeriodAfterAverage) firstPeriodBefore else firstPeriodAfter
-    } else {
-        if (firstPeriodBefore.size == n) firstPeriodBefore else firstPeriodAfter
-    }
-
-    if (abs(calculateAverage(firstPeriod) - calculateAverage(secondPeriod)) > VARIANCE) {
-        secondPeriod = emptyList()
-    }
-
-    return when {
-        secondPeriod.isEmpty() || abs(calculateAverage(firstPeriod) - calculateAverage(secondPeriod)) > VARIANCE -> Pair(
-            firstPeriod,
-            emptyList()
-        )
-
-        firstPeriod.last().dateTime == secondPeriod.first().dateTime.minusHours(1) -> Pair(
-            firstPeriod + secondPeriod,
-            emptyList()
-        )
-
-        firstPeriod.first().dateTime == secondPeriod.last().dateTime.plusHours(1) -> Pair(
-            secondPeriod + firstPeriod,
-            emptyList()
-        )
-
-        firstPeriod.first().dateTime.isBefore(secondPeriod.first().dateTime) -> Pair(firstPeriod, secondPeriod)
-        else -> Pair(secondPeriod, firstPeriod)
-    }
+fun isWithinExpensivePriceVariance(
+    price: Double,
+    expensivePrice: Double,
+    variance: Double
+): Boolean {
+    return expensivePrice - price <= variance
 }
 
 /**
- * Returns the most expensive period.
- * The period is calculated by getting the most expensive hour and then selecting
- * adjacent hours that fall within a price variance of 0.02.
+ * Returns the cheap periods
  */
-fun getMostExpensivePeriod(prices: List<Price>): List<Price> {
-    val mostExpensiveHour = prices.maxByOrNull { it.price } ?: return emptyList()
+fun getCheapPeriods(
+    prices: List<Price>
+): List<List<Price>> {
 
-    val mostExpensivePeriod = mutableListOf(mostExpensiveHour)
+    val variance = calculateCheapVariance(prices)
+    val cheapestPrice = prices.minByOrNull { it.price }?.price ?: return emptyList()
 
-    var i = prices.indexOf(mostExpensiveHour) + 1
-    while (i < prices.size && abs(prices[i].price - mostExpensiveHour.price) < VARIANCE) {
-        mostExpensivePeriod.add(prices[i])
-        i++
+    val cheapPrices = prices.filter { price ->
+        isWithinCheapPriceVariance(
+            price.price,
+            cheapestPrice,
+            variance
+        )
     }
 
-    i = prices.indexOf(mostExpensiveHour) - 1
-    while (i >= 0 && abs(prices[i].price - mostExpensiveHour.price) < VARIANCE) {
-        mostExpensivePeriod.add(prices[i])
-        i--
-    }
-
-    return mostExpensivePeriod.sortedBy { it.dateTime }
+    return joinPrices(cheapPrices)
 }
 
 /**
- * Returns the most expensive period of n hours.
+ * Returns the expensive periods
  */
-fun getMostExpensivePeriod(prices: List<Price>, n: Int): List<Price> {
-    if (prices.size < n) {
-        return emptyList()
+fun getExpensivePeriods(
+    prices: List<Price>
+): List<List<Price>> {
+
+    val variance = calculateExpensiveVariance(prices)
+    val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return emptyList()
+
+    val expensivePrices = prices.filter { price ->
+        isWithinExpensivePriceVariance(
+            price.price,
+            expensivePrice,
+            variance
+        )
     }
 
-    val pricesSorted = prices.sortedBy { it.dateTime }
-
-    var maxSum = Double.NEGATIVE_INFINITY
-    var maxWindow = emptyList<Price>()
-
-    for (i in 0 until pricesSorted.size - n + 1) {
-        val window = pricesSorted.subList(i, i + n)
-        val windowSum = window.sumOf { it.price }
-
-        if (windowSum > maxSum) {
-            maxSum = windowSum
-            maxWindow = window
-        }
-    }
-
-    return maxWindow
+    return joinPrices(expensivePrices)
 }
 
 fun calculateAverage(prices: List<Price>): Double {
     return prices.map { it.price }.average()
 }
 
+fun calculateAverageInCents(prices: List<Price>): Int {
+    return calculateAverage(prices).times(100).roundToInt()
+}
+
 
 fun calculateRating(price: Double, thirtyDayAverage: Double): DayRating {
     val variance = price - thirtyDayAverage
     return when {
-        variance < -VARIANCE -> DayRating.GOOD
-        variance > VARIANCE -> DayRating.BAD
+        variance < -RATING_VARIANCE -> DayRating.GOOD
+        variance > RATING_VARIANCE -> DayRating.BAD
         else -> DayRating.NORMAL
     }
 }
