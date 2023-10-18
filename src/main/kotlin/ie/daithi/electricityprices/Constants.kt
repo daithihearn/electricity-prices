@@ -1,0 +1,3 @@
+const val RATING_VARIANCE = 0.02
+
+const val VARIANCE_DIVISOR = 2
