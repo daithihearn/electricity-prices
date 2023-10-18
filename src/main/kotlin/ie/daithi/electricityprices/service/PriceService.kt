@@ -43,11 +43,11 @@ class PriceService(
         val date = dateStr?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
         val prices = getPrices(start = dateStr, end = dateStr)
         if (prices.isEmpty()) return null
-        val cheapestPeriods = getCheapPeriods(prices)
-        val expensivePeriods = getExpensivePeriods(prices)
+        val thirtyDayAverage: Double = getThirtyDayAverage(date.atStartOfDay())
+        val cheapestPeriods = getCheapPeriods(prices, thirtyDayAverage)
+        val expensivePeriods = getExpensivePeriods(prices, thirtyDayAverage)
 
         val dailyAverage = prices.map { it.price }.average()
-        val thirtyDayAverage: Double = getThirtyDayAverage(date.atStartOfDay())
 
         return DailyPriceInfo(
             dayRating = calculateRating(dailyAverage, thirtyDayAverage),
@@ -60,7 +60,7 @@ class PriceService(
 
     /*
         Calls to the API and update the latest prices
-        We use the REE API as they have the most up to date data
+        We use the REE API as they have the most up-to-date data
      */
     fun updatePriceData(date: LocalDate) {
         logger.info("Updating price data from REE for $date")

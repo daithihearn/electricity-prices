@@ -1,15 +1,12 @@
 package ie.daithi.electricityprices.utils
 
+import RATING_VARIANCE
+import VARIANCE_DIVISOR
 import ie.daithi.electricityprices.model.DayRating
 import ie.daithi.electricityprices.model.Price
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
-
-const val RATING_VARIANCE = 0.02
-
-// The maximum variance value
-const val MAX_VARIANCE = 0.03
-
-const val VARIANCE_DIVISOR = 2
 
 /**
  * Joins prices that are adjacent to each other.
@@ -30,17 +27,40 @@ fun joinPrices(cheapPrices: List<Price>): List<List<Price>> {
     return result
 }
 
+/**
+ * Calculate the combination between the thirty-day average and the daily average.
+ * A weighted average is used with the daily average being weighted twice as much as the thirty-day average.
+ */
+private fun calculateCombinedAverage(dailyAverage: Double, thirtyDayAverage: Double): Double {
+    return (dailyAverage * 2 + thirtyDayAverage) / 3
+}
+
+private fun calculateMinVariance(prices: List<Price>): Double {
+    val cheapestPrice = prices.minByOrNull { it.price }?.price ?: return 0.0
+    val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return 0.0
+    return (expensivePrice - cheapestPrice) / 6
+}
+
+private fun calculateMaxVariance(prices: List<Price>): Double {
+    val cheapestPrice = prices.minByOrNull { it.price }?.price ?: return 0.0
+    val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return 0.0
+    return (expensivePrice - cheapestPrice) / 3
+}
 
 /**
  * Calculate the variance for the cheap periods.
  * This is calculated as:
  * MIN((dailyAverage - cheapestPrice) / VARIANCE_DIVISOR, MAX_VARIANCE)
  */
-fun calculateCheapVariance(prices: List<Price>): Double {
+fun calculateCheapVariance(prices: List<Price>, thirtyDayAverage: Double): Double {
     val dailyAverage = calculateAverage(prices)
-    val cheapestPrice = prices.minByOrNull { it.price }?.price ?: return MAX_VARIANCE
-    val variance = (dailyAverage - cheapestPrice) / VARIANCE_DIVISOR
-    return if (variance > MAX_VARIANCE) MAX_VARIANCE else variance
+    val combinedAverage = calculateCombinedAverage(dailyAverage, thirtyDayAverage)
+    val minVariance = calculateMinVariance(prices)
+    val maxVariance = calculateMaxVariance(prices)
+    val cheapestPrice = prices.minByOrNull { it.price }?.price ?: return minVariance
+    val variance = (combinedAverage - cheapestPrice) / VARIANCE_DIVISOR
+
+    return max(min(variance, maxVariance), minVariance)
 }
 
 /**
@@ -48,11 +68,15 @@ fun calculateCheapVariance(prices: List<Price>): Double {
  * This is calculated as:
  * MIN((expensivePrice - dailyAverage) / VARIANCE_DIVISOR, MAX_VARIANCE)
  */
-fun calculateExpensiveVariance(prices: List<Price>): Double {
+fun calculateExpensiveVariance(prices: List<Price>, thirtyDayAverage: Double): Double {
     val dailyAverage = calculateAverage(prices)
-    val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return MAX_VARIANCE
-    val variance = (expensivePrice - dailyAverage) / VARIANCE_DIVISOR
-    return if (variance > MAX_VARIANCE) MAX_VARIANCE else variance
+    val combinedAverage = calculateCombinedAverage(dailyAverage, thirtyDayAverage)
+    val minVariance = calculateMinVariance(prices)
+    val maxVariance = calculateMaxVariance(prices)
+    val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return minVariance
+    val variance = (expensivePrice - combinedAverage) / VARIANCE_DIVISOR
+
+    return max(min(variance, maxVariance), minVariance)
 }
 
 /**
@@ -75,10 +99,11 @@ fun isWithinExpensivePriceVariance(
  * Returns the cheap periods
  */
 fun getCheapPeriods(
-    prices: List<Price>
+    prices: List<Price>,
+    thirtyDayAverage: Double
 ): List<List<Price>> {
 
-    val variance = calculateCheapVariance(prices)
+    val variance = calculateCheapVariance(prices, thirtyDayAverage)
     val cheapestPrice = prices.minByOrNull { it.price }?.price ?: return emptyList()
 
     val cheapPrices = prices.filter { price ->
@@ -96,10 +121,11 @@ fun getCheapPeriods(
  * Returns the expensive periods
  */
 fun getExpensivePeriods(
-    prices: List<Price>
+    prices: List<Price>,
+    thirtyDayAverage: Double
 ): List<List<Price>> {
 
-    val variance = calculateExpensiveVariance(prices)
+    val variance = calculateExpensiveVariance(prices, thirtyDayAverage)
     val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return emptyList()
 
     val expensivePrices = prices.filter { price ->
