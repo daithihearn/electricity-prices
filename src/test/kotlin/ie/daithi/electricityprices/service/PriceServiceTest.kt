@@ -47,8 +47,8 @@ class PriceServiceTest {
 
         @Test
         fun `getPrices - start and end`() {
-            val start = "2023-08-25"
-            val end = "2023-08-26"
+            val start = LocalDateTime.of(2023, 8, 24, 23, 59, 59)
+            val end = LocalDateTime.of(2023, 8, 26, 23, 59, 59)
             val mockResponse: List<Price> = listOf(Price(LocalDateTime.now(), 1.0))
 
             // Mocking the method
@@ -60,8 +60,8 @@ class PriceServiceTest {
             // Verify the call to dateTimeBetween with specific arguments
             verify {
                 priceRepo.dateTimeBetween(
-                    LocalDate.parse(start, dateFormatter).atStartOfDay().minusSeconds(1),
-                    LocalDate.parse(end, dateFormatter).plusDays(1).atStartOfDay().minusSeconds(1)
+                    start,
+                    end
                 )
             }
 
