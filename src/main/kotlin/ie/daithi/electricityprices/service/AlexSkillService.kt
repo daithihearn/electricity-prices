@@ -6,6 +6,7 @@ import ie.daithi.electricityprices.utils.*
 import org.apache.logging.log4j.LogManager
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.roundToInt
@@ -27,7 +28,7 @@ class AlexSkillService(private val priceService: PriceService, private val messa
         }
 
         // Today's price and rating
-        val thirtyDayAverage = priceService.getThirtyDayAverage()
+        val thirtyDayAverage = priceService.getThirtyDayAverage(now.toLocalDate())
         responses.add(getTodayRating(now, pricesToday, thirtyDayAverage, locale))
 
         // Get next good 3-hour period
@@ -50,7 +51,7 @@ class AlexSkillService(private val priceService: PriceService, private val messa
     fun getTodayRating(
         dateTime: LocalDateTime = LocalDateTime.now(),
         pricesToday: List<Price> = priceService.getPrices(dateTime.toLocalDate()),
-        thirtyDayAverage: Double = priceService.getThirtyDayAverage(),
+        thirtyDayAverage: Double = priceService.getThirtyDayAverage(dateTime.toLocalDate()),
         locale: Locale
     ): String {
         val dailyAverage = calculateAverage(pricesToday)
@@ -73,7 +74,7 @@ class AlexSkillService(private val priceService: PriceService, private val messa
     fun getTomorrowRating(
         dateTime: LocalDateTime = LocalDateTime.now().plusDays(1),
         pricesTomorrow: List<Price> = priceService.getPrices(dateTime.toLocalDate()),
-        thirtyDayAverage: Double = priceService.getThirtyDayAverage(),
+        thirtyDayAverage: Double = priceService.getThirtyDayAverage(dateTime.toLocalDate()),
         locale: Locale
     ): Pair<String, Boolean> {
 
@@ -217,7 +218,7 @@ class AlexSkillService(private val priceService: PriceService, private val messa
     fun getNextCheapPeriod(
         dateTime: LocalDateTime = LocalDateTime.now(),
         pricesToday: List<Price> = priceService.getPrices(dateTime.toLocalDate()),
-        thirtyDayAverage: Double = priceService.getThirtyDayAverage(),
+        thirtyDayAverage: Double = priceService.getThirtyDayAverage(dateTime.toLocalDate()),
         locale: Locale
     ): String {
         val cheapPeriods = getCheapPeriods(pricesToday, thirtyDayAverage)
@@ -256,7 +257,7 @@ class AlexSkillService(private val priceService: PriceService, private val messa
     fun getNextExpensivePeriod(
         dateTime: LocalDateTime = LocalDateTime.now(),
         pricesToday: List<Price> = priceService.getPrices(dateTime.toLocalDate()),
-        thirtyDayAverage: Double = priceService.getThirtyDayAverage(),
+        thirtyDayAverage: Double = priceService.getThirtyDayAverage(dateTime.toLocalDate()),
         locale: Locale
     ): String {
         val expensivePeriods =
@@ -307,7 +308,7 @@ class AlexSkillService(private val priceService: PriceService, private val messa
     }
 
     fun getThirtyDayAverage(
-        thirtyDayAverage: Double = priceService.getThirtyDayAverage(), locale: Locale
+        thirtyDayAverage: Double = priceService.getThirtyDayAverage(LocalDate.now()), locale: Locale
     ): String {
         val thirtyDayAverageRounded = thirtyDayAverage.times(100).roundToInt()
 

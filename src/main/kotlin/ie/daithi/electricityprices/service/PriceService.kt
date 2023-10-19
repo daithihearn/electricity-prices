@@ -22,28 +22,32 @@ class PriceService(
 
     private val logger = LogManager.getLogger(this::class.simpleName)
 
+    fun getTodayPrices(): List<Price> {
+        logger.info("Getting today's prices")
+        val now = LocalDate.now()
+        return getPrices(now)
+    }
+
     fun getPrices(date: LocalDate): List<Price> {
         logger.info("Getting prices for $date")
-        val startDate = date.atStartOfDay().minusSeconds(1)
-        val endDate = date.plusDays(1).atStartOfDay().minusSeconds(1)
-        return priceRepo.dateTimeBetween(startDate, endDate)
+        val start = date.atStartOfDay().minusSeconds(1)
+        val end = date.plusDays(1).atStartOfDay().minusSeconds(1)
+        return getPrices(start, end)
     }
 
-    fun getPrices(start: String?, end: String?): List<Price> {
-        val today = LocalDate.now()
-        val startDate = (start?.let { LocalDate.parse(it, dateFormatter) } ?: today).atStartOfDay().minusSeconds(1)
-        val endDate =
-            (end?.let { LocalDate.parse(it, dateFormatter) } ?: today).plusDays(1).atStartOfDay().minusSeconds(1)
-
-        logger.info("Getting prices between $startDate and $endDate")
-        return priceRepo.dateTimeBetween(startDate, endDate)
+    fun getPrices(start: LocalDateTime, end: LocalDateTime): List<Price> {
+        logger.info("Getting prices between $start and $end")
+        return priceRepo.dateTimeBetween(start, end)
     }
 
-    fun getDailyPriceInfo(dateStr: String?): DailyPriceInfo? {
-        val date = dateStr?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
-        val prices = getPrices(start = dateStr, end = dateStr)
-        if (prices.isEmpty()) return null
-        val thirtyDayAverage: Double = getThirtyDayAverage(date.atStartOfDay())
+    fun getTodayPriceInfo(): DailyPriceInfo {
+        return getDailyPriceInfo(LocalDate.now())
+    }
+
+    fun getDailyPriceInfo(date: LocalDate): DailyPriceInfo {
+        val prices = getPrices(date)
+        if (prices.isEmpty()) throw DataNotAvailableYetException("Data is not available yet for $date")
+        val thirtyDayAverage: Double = getThirtyDayAverage(date)
         val cheapestPeriods = getCheapPeriods(prices, thirtyDayAverage)
         val expensivePeriods = getExpensivePeriods(prices, thirtyDayAverage)
 
@@ -97,8 +101,10 @@ class PriceService(
         }
     }
 
-    fun getThirtyDayAverage(date: LocalDateTime? = LocalDateTime.now()): Double {
-        return getPrices(start = date?.toLocalDate()?.minusDays(30)?.format(dateFormatter), end = null)
+    fun getThirtyDayAverage(date: LocalDate): Double {
+        val start = date.atStartOfDay().minusSeconds(30)
+        val end = date.plusDays(1).atStartOfDay().minusSeconds(1)
+        return getPrices(start, end)
             .map { it.price }.average()
     }
 

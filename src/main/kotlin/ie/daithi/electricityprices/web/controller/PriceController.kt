@@ -5,6 +5,7 @@ import ie.daithi.electricityprices.exceptions.UnprocessableEntityException
 import ie.daithi.electricityprices.model.DailyPriceInfo
 import ie.daithi.electricityprices.model.Price
 import ie.daithi.electricityprices.service.PriceService
+import ie.daithi.electricityprices.utils.dateFormatter
 import ie.daithi.electricityprices.web.validaton.ValidDateDay
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 
 @Validated
 @RestController
@@ -30,23 +32,14 @@ class PriceController(
     @GetMapping("/price")
     @ResponseStatus(value = HttpStatus.OK)
     @Operation(
-        summary = "Get price info", description = "Returns price info within the range provided. " +
-                "If no start date is provided the default is the start of the current day. If no end date is " +
-                "provided the default is the end of today. Dates should be given in a string form yyyy-MM-dd"
+        summary = "Get price info", description = "Returns price info for the day provided. If no day is provided it " +
+                "defaults to today. The day should be given in a string form yyyy-MM-dd"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "start",
+        name = "date",
         schema = Schema(type = "string", pattern = "\\d{4}-\\d{2}-\\d{2}"),
-        description = "Start date for query (defaults to today)",
-        required = false,
-        example = "2023-08-30"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "end",
-        schema = Schema(type = "string", pattern = "\\d{4}-\\d{2}-\\d{2}"),
-        description = "End date for query (defaults to today)",
+        description = "The date to query (defaults to today)",
         required = false,
         example = "2023-08-30"
     )
@@ -74,10 +67,10 @@ class PriceController(
     )
     @ResponseBody
     fun getPrices(
-        @ValidDateDay @RequestParam(required = false) start: String?,
-        @ValidDateDay @RequestParam(required = false) end: String?
+        @ValidDateDay @RequestParam(required = false) date: String?,
     ): List<Price> {
-        return priceSerice.getPrices(start, end)
+        date ?: return priceSerice.getTodayPrices()
+        return priceSerice.getPrices(LocalDate.parse(date, dateFormatter))
     }
 
     @GetMapping("/price/dailyinfo")
@@ -135,6 +128,7 @@ class PriceController(
     )
     @ResponseBody
     fun getDailyPriceInfo(@ValidDateDay @RequestParam(required = false) date: String?): DailyPriceInfo {
-        return priceSerice.getDailyPriceInfo(date) ?: throw DataNotAvailableYetException("No data available for $date")
+        date ?: return priceSerice.getTodayPriceInfo()
+        return priceSerice.getDailyPriceInfo(LocalDate.parse(date, dateFormatter))
     }
 }

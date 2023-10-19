@@ -8,7 +8,11 @@ spring:
   profiles:
     active:
       ${SPRING_PROFILES_ACTIVE:prod}
-  jackson.default-property-inclusion: non_null
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+      WRITE_DATES_WITH_ZONE_ID: true
   mvc.pathmatch.matching-strategy: ant_path_matcher
   data.mongodb.uri: ${MONGODB_URI:mongodb://localhost:27017/electricity-prices}
 
