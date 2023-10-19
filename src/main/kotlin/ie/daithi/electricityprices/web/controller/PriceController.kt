@@ -2,6 +2,7 @@ package ie.daithi.electricityprices.web.controller
 
 import ie.daithi.electricityprices.exceptions.DataNotAvailableYetException
 import ie.daithi.electricityprices.exceptions.UnprocessableEntityException
+import ie.daithi.electricityprices.model.DailyMedian
 import ie.daithi.electricityprices.model.DailyPriceInfo
 import ie.daithi.electricityprices.model.Price
 import ie.daithi.electricityprices.service.PriceService
@@ -130,5 +131,65 @@ class PriceController(
     fun getDailyPriceInfo(@ValidDateDay @RequestParam(required = false) date: String?): DailyPriceInfo {
         date ?: return priceSerice.getTodayPriceInfo()
         return priceSerice.getDailyPriceInfo(LocalDate.parse(date, dateFormatter))
+    }
+
+    @GetMapping("/price/medians")
+    @ResponseStatus(value = HttpStatus.OK)
+    @Operation(
+        summary = "Get 30 day medians",
+        description = "Return median values for the 30 days before the date provided. " +
+                "Dates should be given in a string form yyyy-MM-dd"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "date",
+        schema = Schema(type = "string", pattern = "\\d{4}-\\d{2}-\\d{2}"),
+        description = "Address of the transaction origin",
+        required = false,
+        example = "2023-08-30"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Request successful"),
+            ApiResponse(
+                responseCode = "404", description = "Data not available", content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = DataNotAvailableYetException::class),
+                    examples = [
+                        ExampleObject(
+                            value = "{\n" +
+                                    "  \"timestamp\": \"2023-09-10T10:03:38.111+00:00\",\n" +
+                                    "  \"status\": 404,\n" +
+                                    "  \"error\": \"Not Found\",\n" +
+                                    "  \"message\": \"No data available for 2024-01-01\",\n" +
+                                    "  \"path\": \"/api/v1/price/medians?date=2024-01-01\"\n" +
+                                    "}"
+                        )
+                    ]
+                )]
+            ),
+            ApiResponse(
+                responseCode = "422", description = "Invalid date", content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = UnprocessableEntityException::class),
+                    examples = [
+                        ExampleObject(
+                            value = "{\n" +
+                                    "  \"timestamp\": \"2023-09-10T10:03:38.111+00:00\",\n" +
+                                    "  \"status\": 422,\n" +
+                                    "  \"error\": \"Unprocessable Entity\",\n" +
+                                    "  \"message\": \"\"getDailyPriceInfo.date: The provided date is invalid. It must match yyyy-MM-dd\",\n" +
+                                    "  \"path\": \"/api/v1/price/medians/incorrect\"\n" +
+                                    "}"
+                        )
+                    ]
+                )]
+            )
+        ]
+    )
+    @ResponseBody
+    fun getThirtyDayMedians(@ValidDateDay @RequestParam(required = false) date: String?): List<DailyMedian> {
+        val day = date?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
+        return priceSerice.getDailyMedians(day, 30)
     }
 }

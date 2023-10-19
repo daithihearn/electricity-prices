@@ -1,10 +1,7 @@
 package ie.daithi.electricityprices.service
 
 import ie.daithi.electricityprices.exceptions.DataNotAvailableYetException
-import ie.daithi.electricityprices.model.DailyPriceInfo
-import ie.daithi.electricityprices.model.EsiosPrice
-import ie.daithi.electricityprices.model.Price
-import ie.daithi.electricityprices.model.ReePrice
+import ie.daithi.electricityprices.model.*
 import ie.daithi.electricityprices.repos.PriceRepo
 import ie.daithi.electricityprices.utils.*
 import org.apache.logging.log4j.LogManager
@@ -60,6 +57,26 @@ class PriceService(
             cheapestPeriods = cheapestPeriods,
             expensivePeriods = expensivePeriods
         )
+    }
+
+    fun getMedians(prices: List<Price>): List<DailyMedian> {
+        val medians = mutableListOf<DailyMedian>()
+        val dates = prices.map { it.dateTime.toLocalDate() }.distinct()
+        dates.forEach { date ->
+            val pricesForDay = prices.filter { it.dateTime.toLocalDate() == date }
+            val median = pricesForDay.map { it.price }.average()
+            medians.add(DailyMedian(date, median))
+        }
+        return medians
+    }
+
+    fun getDailyMedians(date: LocalDate, numberOfDays: Long): List<DailyMedian> {
+        val xDaysAgo = date.minusDays(numberOfDays).atStartOfDay().minusSeconds(1)
+        val today = date.plusDays(1).atStartOfDay().minusSeconds(1)
+
+        val prices = getPrices(xDaysAgo, today)
+        if (prices.isEmpty()) throw DataNotAvailableYetException("30 day median data not available for $date")
+        return getMedians(prices)
     }
 
     /*
