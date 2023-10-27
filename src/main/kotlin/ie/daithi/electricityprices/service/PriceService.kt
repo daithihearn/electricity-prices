@@ -5,6 +5,10 @@ import ie.daithi.electricityprices.model.*
 import ie.daithi.electricityprices.repos.PriceRepo
 import ie.daithi.electricityprices.utils.*
 import org.apache.logging.log4j.LogManager
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.aggregation.Aggregation.*
+import org.springframework.data.mongodb.core.aggregation.MatchOperation
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.LocalDate
@@ -14,7 +18,8 @@ import java.time.LocalDateTime
 class PriceService(
     private val priceRepo: PriceRepo,
     private val reeRest: WebClient,
-    private val esiosRest: WebClient
+    private val esiosRest: WebClient,
+    private val mongoTemplate: MongoTemplate
 ) {
 
     private val logger = LogManager.getLogger(this::class.simpleName)
@@ -121,8 +126,22 @@ class PriceService(
     fun getThirtyDayAverage(date: LocalDate): Double {
         val start = date.minusDays(30).atStartOfDay().minusSeconds(1)
         val end = date.plusDays(1).atStartOfDay().minusSeconds(1)
-        val prices = getPrices(start, end)
-        return calculateAverage(prices)
+
+        // Stage 1: Filter documents within the desired date range
+        val matchStage: MatchOperation = match(Criteria.where("dateTime").gte(start).lte(end))
+
+        // Stage 2: Calculate the average price
+        val groupStage = group().avg("price").`as`("averagePrice")
+
+        // Define the aggregation pipeline
+        val aggregation = newAggregation(matchStage, groupStage)
+
+        // Execute the aggregation
+        val result = mongoTemplate.aggregate(aggregation, "prices", AveragePriceResult::class.java)
+
+        // Retrieve and return the average price
+        return result.uniqueMappedResult?.averagePrice
+            ?: throw DataNotAvailableYetException("30 day average data not available for $date")
     }
 
     /*
@@ -181,3 +200,5 @@ class PriceService(
 
 
 }
+
+data class AveragePriceResult(val averagePrice: Double)
