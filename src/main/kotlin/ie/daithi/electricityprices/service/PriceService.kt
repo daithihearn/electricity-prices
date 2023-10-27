@@ -48,7 +48,7 @@ class PriceService(
         val cheapestPeriods = getCheapPeriods(prices, thirtyDayAverage)
         val expensivePeriods = getExpensivePeriods(prices, thirtyDayAverage)
 
-        val dailyAverage = prices.map { it.price }.average()
+        val dailyAverage = calculateAverage(prices)
 
         return DailyPriceInfo(
             dayRating = calculateRating(dailyAverage, thirtyDayAverage),
@@ -59,7 +59,7 @@ class PriceService(
         )
     }
 
-    fun getMedians(prices: List<Price>): List<DailyMedian> {
+    fun calculateDailyMedians(prices: List<Price>): List<DailyMedian> {
         val medians = mutableListOf<DailyMedian>()
         val dates = prices.map { it.dateTime.toLocalDate() }.distinct()
         dates.forEach { date ->
@@ -76,7 +76,7 @@ class PriceService(
 
         val prices = getPrices(xDaysAgo, today)
         if (prices.isEmpty()) throw DataNotAvailableYetException("30 day median data not available for $date")
-        return getMedians(prices)
+        return calculateDailyMedians(prices)
     }
 
     /*
@@ -106,7 +106,7 @@ class PriceService(
             val pvpc = reePrices.included.find { it.id == "1001" }
             val prices = pvpc?.attributes?.values?.map {
                 Price(
-                    dateTime = LocalDateTime.parse(it.datetime, dateTimeOffsetFormatter),
+                    dateTime = parseDateTimeFromOffset(it.datetime),
                     price = it.value / 1000
                 )
             }
@@ -119,10 +119,10 @@ class PriceService(
     }
 
     fun getThirtyDayAverage(date: LocalDate): Double {
-        val start = date.atStartOfDay().minusSeconds(30)
+        val start = date.minusDays(30).atStartOfDay().minusSeconds(1)
         val end = date.plusDays(1).atStartOfDay().minusSeconds(1)
-        return getPrices(start, end)
-            .map { it.price }.average()
+        val prices = getPrices(start, end)
+        return calculateAverage(prices)
     }
 
     /*
