@@ -345,6 +345,12 @@ class PriceUtilsTest {
             assert(periods[2][2].id == "20:00")
             assert(periods[2][3].id == "21:00")
         }
+
+        @Test
+        fun `getExpensivePeriods - very cheap`() {
+            val periods = getExpensivePeriods(pricesVeryCheap, 0.17)
+            assert(periods.isEmpty())
+        }
     }
 
     @Nested
@@ -353,6 +359,12 @@ class PriceUtilsTest {
         fun `calculateRating - very cheap`() {
             val rating = calculateRating(calculateAverage(pricesVeryCheap), 0.17)
             assert(rating == DayRating.GOOD)
+        }
+
+        @Test
+        fun `calculateRating - 2023-08-18`() {
+            val rating = calculateRating(calculateAverage(prices18), 0.14)
+            assert(rating == DayRating.BAD)
         }
     }
 }
