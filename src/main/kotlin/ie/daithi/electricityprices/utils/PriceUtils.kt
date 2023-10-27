@@ -50,7 +50,7 @@ private fun calculateMaxVariance(prices: List<Price>): Double {
 /**
  * Calculate the variance for the cheap periods.
  * This is calculated as:
- * MIN((dailyAverage - cheapestPrice) / VARIANCE_DIVISOR, MAX_VARIANCE)
+ * MAX(MIN((dailyAverage - cheapestPrice) / VARIANCE_DIVISOR, MAX_VARIANCE), MIN_VARIANCE)
  */
 fun calculateCheapVariance(prices: List<Price>, thirtyDayAverage: Double): Double {
     val dailyAverage = calculateAverage(prices)
@@ -66,7 +66,7 @@ fun calculateCheapVariance(prices: List<Price>, thirtyDayAverage: Double): Doubl
 /**
  * Calculate the variance for the expensive periods.
  * This is calculated as:
- * MIN((expensivePrice - dailyAverage) / VARIANCE_DIVISOR, MAX_VARIANCE)
+ * MAX(MIN((expensivePrice - dailyAverage) / VARIANCE_DIVISOR, MAX_VARIANCE), MIN_VARIANCE)
  */
 fun calculateExpensiveVariance(prices: List<Price>, thirtyDayAverage: Double): Double {
     val dailyAverage = calculateAverage(prices)
@@ -127,6 +127,9 @@ fun getExpensivePeriods(
 
     val variance = calculateExpensiveVariance(prices, thirtyDayAverage)
     val expensivePrice = prices.maxByOrNull { it.price }?.price ?: return emptyList()
+
+    // If the most expensive price would be considered cheap, return empty list
+    if (expensivePrice < thirtyDayAverage - RATING_VARIANCE) return emptyList()
 
     val expensivePrices = prices.filter { price ->
         isWithinExpensivePriceVariance(
