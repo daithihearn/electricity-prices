@@ -8,6 +8,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -17,8 +18,9 @@ class PriceServiceTest {
     private val priceRepo = mockk<PriceRepo>(relaxed = true)
     private val reeRest = mockk<WebClient>(relaxed = true)
     private val esiosRest = mockk<WebClient>(relaxed = true)
+    private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
 
-    private val priceService = PriceService(priceRepo, reeRest, esiosRest)
+    private val priceService = PriceService(priceRepo, reeRest, esiosRest, mongoTemplate)
 
     @Nested
     inner class GetPricesTest {
