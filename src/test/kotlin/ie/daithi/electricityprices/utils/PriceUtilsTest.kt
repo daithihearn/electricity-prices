@@ -3,6 +3,7 @@ package ie.daithi.electricityprices.utils
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import ie.daithi.electricityprices.model.DayRating
 import ie.daithi.electricityprices.model.Price
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -29,6 +30,8 @@ class PriceUtilsTest {
 
     private val prices17 =
         objectMapper.readValue(File("src/test/resources/prices-2023-10-17.json"), typeRef)
+
+    private val pricesVeryCheap =  objectMapper.readValue(File("src/test/resources/prices-very-cheap.json"), typeRef)
 
     @Nested
     inner class CalculateCheapVariance {
@@ -341,6 +344,15 @@ class PriceUtilsTest {
             assert(periods[2][1].id == "19:00")
             assert(periods[2][2].id == "20:00")
             assert(periods[2][3].id == "21:00")
+        }
+    }
+
+    @Nested
+    inner class CalculateRating {
+        @Test
+        fun `calculateRating - very cheap`() {
+            val rating = calculateRating(calculateAverage(pricesVeryCheap), 0.17)
+            assert(rating == DayRating.GOOD)
         }
     }
 }

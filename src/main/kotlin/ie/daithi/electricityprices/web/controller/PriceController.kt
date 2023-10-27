@@ -33,7 +33,8 @@ class PriceController(
     @GetMapping("/price")
     @ResponseStatus(value = HttpStatus.OK)
     @Operation(
-        summary = "Get price info", description = "Returns price info for the day provided. If no day is provided it " +
+        summary = "Get price info",
+        description = "Returns price info for the date provided. If no date is provided it " +
                 "defaults to today. The day should be given in a string form yyyy-MM-dd"
     )
     @Parameter(
