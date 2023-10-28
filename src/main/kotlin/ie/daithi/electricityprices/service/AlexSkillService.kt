@@ -263,10 +263,14 @@ class AlexSkillService(private val priceService: PriceService, private val messa
         val expensivePeriods =
             getExpensivePeriods(pricesToday, thirtyDayAverage)
 
-        if (expensivePeriods.isEmpty()) throw Exception("No expensive periods found")
+        if (expensivePeriods.isEmpty()) return messageSource.getMessage(
+            "alexa.next.expensive.period.no_data",
+            emptyArray(),
+            locale
+        )
 
         val nextPeriod = getNextPeriod(expensivePeriods, dateTime) ?: return messageSource.getMessage(
-            "alexa.next.expensive.period.no_data",
+            "alexa.next.expensive.period.none_left",
             emptyArray(),
             locale
         )
