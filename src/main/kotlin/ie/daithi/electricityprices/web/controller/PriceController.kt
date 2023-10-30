@@ -2,7 +2,7 @@ package ie.daithi.electricityprices.web.controller
 
 import ie.daithi.electricityprices.exceptions.DataNotAvailableYetException
 import ie.daithi.electricityprices.exceptions.UnprocessableEntityException
-import ie.daithi.electricityprices.model.DailyMedian
+import ie.daithi.electricityprices.model.DailyAverage
 import ie.daithi.electricityprices.model.DailyPriceInfo
 import ie.daithi.electricityprices.model.Price
 import ie.daithi.electricityprices.service.PriceService
@@ -134,11 +134,11 @@ class PriceController(
         return priceSerice.getDailyPriceInfo(LocalDate.parse(date, dateFormatter))
     }
 
-    @GetMapping("/price/medians")
+    @GetMapping("/price/averages")
     @ResponseStatus(value = HttpStatus.OK)
     @Operation(
-        summary = "Get 30 day medians",
-        description = "Return median values for the 30 days before the date provided. " +
+        summary = "Get 30 day averages",
+        description = "Return average values for the 30 days before the date provided. " +
                 "Dates should be given in a string form yyyy-MM-dd"
     )
     @Parameter(
@@ -163,7 +163,7 @@ class PriceController(
                                     "  \"status\": 404,\n" +
                                     "  \"error\": \"Not Found\",\n" +
                                     "  \"message\": \"No data available for 2024-01-01\",\n" +
-                                    "  \"path\": \"/api/v1/price/medians?date=2024-01-01\"\n" +
+                                    "  \"path\": \"/api/v1/price/averages?date=2024-01-01\"\n" +
                                     "}"
                         )
                     ]
@@ -180,7 +180,7 @@ class PriceController(
                                     "  \"status\": 422,\n" +
                                     "  \"error\": \"Unprocessable Entity\",\n" +
                                     "  \"message\": \"\"getDailyPriceInfo.date: The provided date is invalid. It must match yyyy-MM-dd\",\n" +
-                                    "  \"path\": \"/api/v1/price/medians/incorrect\"\n" +
+                                    "  \"path\": \"/api/v1/price/averages/incorrect\"\n" +
                                     "}"
                         )
                     ]
@@ -189,8 +189,8 @@ class PriceController(
         ]
     )
     @ResponseBody
-    fun getThirtyDayMedians(@ValidDateDay @RequestParam(required = false) date: String?): List<DailyMedian> {
+    fun getThirtyDayAverages(@ValidDateDay @RequestParam(required = false) date: String?): List<DailyAverage> {
         val day = date?.let { LocalDate.parse(it, dateFormatter) } ?: LocalDate.now()
-        return priceSerice.getDailyMedians(day, 30)
+        return priceSerice.getDailyAverages(day, 30)
     }
 }

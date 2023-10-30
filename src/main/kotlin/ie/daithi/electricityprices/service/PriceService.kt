@@ -64,24 +64,24 @@ class PriceService(
         )
     }
 
-    fun calculateDailyMedians(prices: List<Price>): List<DailyMedian> {
-        val medians = mutableListOf<DailyMedian>()
+    fun calculateDailyAverages(prices: List<Price>): List<DailyAverage> {
+        val averages = mutableListOf<DailyAverage>()
         val dates = prices.map { it.dateTime.toLocalDate() }.distinct()
         dates.forEach { date ->
             val pricesForDay = prices.filter { it.dateTime.toLocalDate() == date }
-            val median = pricesForDay.map { it.price }.average()
-            medians.add(DailyMedian(date, median))
+            val average = pricesForDay.map { it.price }.average()
+            averages.add(DailyAverage(date, average))
         }
-        return medians
+        return averages
     }
 
-    fun getDailyMedians(date: LocalDate, numberOfDays: Long): List<DailyMedian> {
+    fun getDailyAverages(date: LocalDate, numberOfDays: Long): List<DailyAverage> {
         val xDaysAgo = date.minusDays(numberOfDays).atStartOfDay().minusSeconds(1)
         val today = date.plusDays(1).atStartOfDay().minusSeconds(1)
 
         val prices = getPrices(xDaysAgo, today)
-        if (prices.isEmpty()) throw DataNotAvailableYetException("30 day median data not available for $date")
-        return calculateDailyMedians(prices)
+        if (prices.isEmpty()) throw DataNotAvailableYetException("30 day average data not available for $date")
+        return calculateDailyAverages(prices)
     }
 
     /*

@@ -2,7 +2,7 @@ package ie.daithi.electricityprices.model
 
 import java.time.LocalDate
 
-data class DailyMedian(
+data class DailyAverage(
     val date: LocalDate,
-    val median: Double
+    val average: Double
 )
