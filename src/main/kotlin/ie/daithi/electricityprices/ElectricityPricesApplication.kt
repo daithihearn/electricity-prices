@@ -10,7 +10,7 @@ import org.springframework.boot.runApplication
     info = Info(
         title =
         "Electricity Prices API",
-        version = "1.17.0",
+        version = "1.18.0",
         description = "Returns PVPC electricity prices for a given range"
     ),
     servers = [

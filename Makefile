@@ -3,5 +3,6 @@ help:
 
 build: #@ Build local
 	./gradlew clean build
+.PHONY:build
 image: #@ Build docker image
 	docker build -t electricity-prices . --load
