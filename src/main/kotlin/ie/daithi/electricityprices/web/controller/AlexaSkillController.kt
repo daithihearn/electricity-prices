@@ -39,7 +39,7 @@ class AlexaSkillController(
         ApiResponse(responseCode = "200", description = "Request successful")
     )
     @ResponseBody
-    fun getFullFeed(@RequestParam(value = "lang", required = false) lang: String?): AlexaSkillResponse {
+    fun getFullFeed(@RequestParam(value = "lang", required = false) lang: String?): AlexaResponse {
         val resolvedLocale = lang?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
         return wrapInSkillResponse(
             message = alexSkillService.getFullFeed(resolvedLocale),
@@ -57,7 +57,7 @@ class AlexaSkillController(
         ApiResponse(responseCode = "200", description = "Request successful")
     )
     @ResponseBody
-    fun processAlexaRequest(@RequestBody rawBody: String, request: HttpServletRequest): AlexaResponse {
+    fun processAlexaRequest(@RequestBody rawBody: String, request: HttpServletRequest): AlexaSkillResponse {
         // Map the rawBody to an AlexaRequest object using the jackson mapper
         val body = mapper.readValue(rawBody, AlexaRequest::class.java)
 
@@ -97,6 +97,6 @@ class AlexaSkillController(
         }
         val outputSpeech = OutputSpeech(text = response.first)
         val responseBody = AlexaResponseBody(outputSpeech = outputSpeech, shouldEndSession = response.second)
-        return AlexaResponse(response = responseBody)
+        return AlexaSkillResponse(response = responseBody)
     }
 }
