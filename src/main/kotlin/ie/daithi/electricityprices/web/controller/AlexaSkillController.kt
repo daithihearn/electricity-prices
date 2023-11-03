@@ -39,8 +39,8 @@ class AlexaSkillController(
         ApiResponse(responseCode = "200", description = "Request successful")
     )
     @ResponseBody
-    fun getFullFeed(@RequestParam(value = "locale", required = false) locale: String?): AlexaSkillResponse {
-        val resolvedLocale = locale?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
+    fun getFullFeed(@RequestParam(value = "lang", required = false) lang: String?): AlexaSkillResponse {
+        val resolvedLocale = lang?.let { Locale.forLanguageTag(it) } ?: Locale.forLanguageTag("es")
         return wrapInSkillResponse(
             message = alexSkillService.getFullFeed(resolvedLocale),
             title = messageSource.getMessage("alexa.full.title", emptyArray(), resolvedLocale)
